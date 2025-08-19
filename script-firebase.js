@@ -685,13 +685,9 @@ function loadUserHistory() {
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <!-- Botão de edição: sempre visível para o próprio usuário, admins podem editar qualquer produção -->
-                    ${(p.userId === currentUser.uid || currentUserData.role === 'admin') ? `
-                        <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
-                            ✏️
-                        </button>
-                    ` : ''}
-                    <!-- Botão de deletar: apenas para admins -->
+                    <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
+                        ✏️
+                    </button>
                     ${currentUserData.role === 'admin' ? `
                         <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
                             🗑️
@@ -703,7 +699,8 @@ function loadUserHistory() {
     `).join('');
 }
 
-// Função para buscar/filtrar histórico
+// TAMBÉM SUBSTITUA a função filterHistory existente:
+
 function filterHistory() {
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
     const userProductions = allProductions
@@ -736,11 +733,16 @@ function filterHistory() {
                         R4: ${p.points?.retrofit4 || 0} | RV: ${p.points?.remodelagemV || 0} | RD: ${p.points?.remodelagemD || 0}
                     </div>
                 </div>
-                ${currentUserData.role === 'admin' ? `
-                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;" onclick="deleteProduction('${p.id}')">
-                        🗑️
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
+                        ✏️
                     </button>
-                ` : ''}
+                    ${currentUserData.role === 'admin' ? `
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
+                            🗑️
+                        </button>
+                    ` : ''}
+                </div>
             </div>
         </div>
     `).join('');
@@ -1641,4 +1643,192 @@ async function logoutUser() {
         console.error('Erro no logout:', error);
         showError('Erro ao fazer logout');
     }
+}
+
+// FUNÇÕES DE EDIÇÃO - Adicionar ao final do script-firebase.js
+
+let currentEditId = null;
+
+// Função para editar produção
+function editProduction(productionId) {
+    const production = allProductions.find(p => p.id === productionId);
+    if (!production) {
+        showError('Produção não encontrada');
+        return;
+    }
+    
+    // Verificar permissões
+    if (production.userId !== currentUser.uid && currentUserData.role !== 'admin') {
+        showError('Você só pode editar suas próprias produções');
+        return;
+    }
+    
+    currentEditId = productionId;
+    
+    // Preencher o modal de edição
+    document.getElementById('editProjectDate').value = production.date || '';
+    document.getElementById('editPlaza').value = production.plaza || '';
+    document.getElementById('editProjectType').value = production.projectType || '';
+    
+    // Preencher pontos
+    document.getElementById('editRetrofit1').value = production.points?.retrofit1 || 0;
+    document.getElementById('editRetrofit2').value = production.points?.retrofit2 || 0;
+    document.getElementById('editRetrofit3').value = production.points?.retrofit3 || 0;
+    document.getElementById('editRetrofit4').value = production.points?.retrofit4 || 0;
+    document.getElementById('editRemodelagemV').value = production.points?.remodelagemV || 0;
+    document.getElementById('editRemodelagemD').value = production.points?.remodelagemD || 0;
+    
+    // Calcular total
+    calculateEditTotal();
+    
+    // Mostrar modal
+    document.getElementById('editModal').classList.remove('hidden');
+}
+
+// Função para calcular total no modal de edição
+function calculateEditTotal() {
+    const fields = ['editRetrofit1', 'editRetrofit2', 'editRetrofit3', 'editRetrofit4', 'editRemodelagemV', 'editRemodelagemD'];
+    let total = 0;
+    
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            const value = parseInt(element.value) || 0;
+            total += value;
+        }
+    });
+    
+    const totalEl = document.getElementById('editTotalPoints');
+    if (totalEl) {
+        totalEl.textContent = total;
+    }
+}
+
+// Função para esconder modal de edição
+function hideEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    currentEditId = null;
+    
+    // Limpar formulário
+    document.getElementById('editProjectDate').value = '';
+    document.getElementById('editPlaza').value = '';
+    document.getElementById('editProjectType').value = '';
+    document.getElementById('editRetrofit1').value = 0;
+    document.getElementById('editRetrofit2').value = 0;
+    document.getElementById('editRetrofit3').value = 0;
+    document.getElementById('editRetrofit4').value = 0;
+    document.getElementById('editRemodelagemV').value = 0;
+    document.getElementById('editRemodelagemD').value = 0;
+    calculateEditTotal();
+}
+
+// Função para atualizar produção
+async function updateProduction() {
+    if (!currentEditId) {
+        showError('ID da produção não encontrado');
+        return;
+    }
+    
+    const production = allProductions.find(p => p.id === currentEditId);
+    if (!production) {
+        showError('Produção não encontrada');
+        return;
+    }
+    
+    // Verificar permissões novamente
+    if (production.userId !== currentUser.uid && currentUserData.role !== 'admin') {
+        showError('Você só pode editar suas próprias produções');
+        return;
+    }
+    
+    // Validar campos obrigatórios
+    const date = document.getElementById('editProjectDate').value;
+    const plaza = document.getElementById('editPlaza').value.trim();
+    const projectType = document.getElementById('editProjectType').value.trim();
+    
+    if (!date || !plaza || !projectType) {
+        showError('Por favor, preencha todos os campos obrigatórios');
+        return;
+    }
+    
+    try {
+        showButtonLoading('updateBtn');
+        
+        const updatedProduction = {
+            date: date,
+            plaza: plaza,
+            projectType: projectType,
+            points: {
+                retrofit1: parseInt(document.getElementById('editRetrofit1').value) || 0,
+                retrofit2: parseInt(document.getElementById('editRetrofit2').value) || 0,
+                retrofit3: parseInt(document.getElementById('editRetrofit3').value) || 0,
+                retrofit4: parseInt(document.getElementById('editRetrofit4').value) || 0,
+                remodelagemV: parseInt(document.getElementById('editRemodelagemV').value) || 0,
+                remodelagemD: parseInt(document.getElementById('editRemodelagemD').value) || 0
+            },
+            total: parseInt(document.getElementById('editTotalPoints').textContent),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: currentUser.uid
+        };
+        
+        // Atualizar no Firebase
+        await db.collection(COLLECTIONS.PRODUCTIONS).doc(currentEditId).update(updatedProduction);
+        
+        // Recarregar dados
+        await loadAllData();
+        updateDashboard();
+        loadUserHistory();
+        
+        hideEditModal();
+        showSuccess('✅ Produção atualizada com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao atualizar produção:', error);
+        showError('Erro ao atualizar produção. Tente novamente.');
+    } finally {
+        hideButtonLoading('updateBtn');
+    }
+}
+
+// Adicionar event listeners para o modal de edição
+document.addEventListener('DOMContentLoaded', function() {
+    // Event listener para fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const editModal = document.getElementById('editModal');
+            if (editModal && !editModal.classList.contains('hidden')) {
+                hideEditModal();
+            }
+        }
+    });
+    
+    // Event listener para clicar fora do modal
+    document.getElementById('editModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideEditModal();
+        }
+    });
+});
+
+// Função para configurar eventos de teclado do modal de edição
+function setupEditModalEvents() {
+    const editInputs = [
+        'editRetrofit1', 'editRetrofit2', 'editRetrofit3', 
+        'editRetrofit4', 'editRemodelagemV', 'editRemodelagemD'
+    ];
+    
+    editInputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', calculateEditTotal);
+            element.addEventListener('change', calculateEditTotal);
+        }
+    });
+}
+
+// Chamar setupEditModalEvents após o DOM estar carregado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEditModalEvents);
+} else {
+    setupEditModalEvents();
 }

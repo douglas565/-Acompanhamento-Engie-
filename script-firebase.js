@@ -688,7 +688,7 @@ function loadUserHistory() {
                     <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
                         ✏️
                     </button>
-                    ${currentUserData.role === 'admin' ? `
+                    ${currentUserData.role === 'admin' || currentUserData.id === p.userId ? `
                         <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
                             🗑️
                         </button>

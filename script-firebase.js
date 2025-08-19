@@ -448,18 +448,25 @@ function updateStats() {
 }
 
 function updateCharts() {
-    updateTeamChart();
-    updateMonthlyChart();
-    updateUserChart();
-    updateProjectTypeChart();
+    // Aguardar um pouco para garantir que os elementos DOM estejam prontos
+    setTimeout(() => {
+        updateTeamChart();
+        updateMonthlyChart();
+        updateProjectTypeChart();
+    }, 100);
 }
 
 function updateTeamChart() {
     const ctx = document.getElementById('teamChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('Canvas teamChart não encontrado');
+        return;
+    }
     
+    // Destruir gráfico anterior
     if (charts.team) {
         charts.team.destroy();
+        charts.team = null;
     }
     
     const curitibaPoints = allProductions
@@ -470,39 +477,91 @@ function updateTeamChart() {
         .filter(p => p.team === 'Florianópolis')
         .reduce((sum, p) => sum + p.total, 0);
     
-    charts.team = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Curitiba', 'Florianópolis'],
-            datasets: [{
-                data: [curitibaPoints, florianopolisPoints],
-                backgroundColor: ['#667eea', '#764ba2'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+    console.log('Dados do gráfico de equipes:', { curitibaPoints, florianopolisPoints });
+    
+    // Verificar se há dados
+    if (curitibaPoints === 0 && florianopolisPoints === 0) {
+        const context = ctx.getContext('2d');
+        context.clearRect(0, 0, ctx.width, ctx.height);
+        context.font = '16px Arial';
+        context.fillStyle = '#666';
+        context.textAlign = 'center';
+        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        return;
+    }
+    
+    try {
+        charts.team = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Curitiba', 'Florianópolis'],
+                datasets: [{
+                    data: [curitibaPoints, florianopolisPoints],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(102, 126, 234, 1)',
+                        'rgba(118, 75, 162, 1)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                return `${context.label}: ${context.raw} pontos (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+        console.log('Gráfico de equipes criado com sucesso');
+    } catch (error) {
+        console.error('Erro ao criar gráfico de equipes:', error);
+    }
 }
 
 function updateMonthlyChart() {
     const ctx = document.getElementById('monthlyChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('Canvas monthlyChart não encontrado');
+        return;
+    }
     
+    // Destruir gráfico anterior
     if (charts.monthly) {
         charts.monthly.destroy();
+        charts.monthly = null;
     }
     
     // Agrupar por mês
     const monthlyData = {};
-    const relevantProductions = currentUserData.role === 'admin' 
+    const relevantProductions = currentUserData && currentUserData.role === 'admin' 
         ? allProductions 
         : allProductions.filter(p => p.userId === currentUser.uid);
     
@@ -516,37 +575,98 @@ function updateMonthlyChart() {
     const months = Object.keys(monthlyData).sort();
     const values = months.map(m => monthlyData[m]);
     
-    charts.monthly = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: months.map(m => {
-                const [year, month] = m.split('-');
-                return `${month}/${year}`;
-            }),
-            datasets: [{
-                label: 'Pontos',
-                data: values,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    console.log('Dados do gráfico mensal:', { months, values });
+    
+    if (months.length === 0) {
+        const context = ctx.getContext('2d');
+        context.clearRect(0, 0, ctx.width, ctx.height);
+        context.font = '16px Arial';
+        context.fillStyle = '#666';
+        context.textAlign = 'center';
+        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        return;
+    }
+    
+    try {
+        charts.monthly = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months.map(m => {
+                    const [year, month] = m.split('-');
+                    const date = new Date(year, month - 1);
+                    return date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+                }),
+                datasets: [{
+                    label: 'Pontos de Produção',
+                    data: values,
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return `Mês: ${tooltipItems[0].label}`;
+                            },
+                            label: function(context) {
+                                return `Pontos: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 10,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+        console.log('Gráfico mensal criado com sucesso');
+    } catch (error) {
+        console.error('Erro ao criar gráfico mensal:', error);
+    }
 }
 
 function updateUserChart() {
@@ -598,10 +718,15 @@ function updateUserChart() {
 
 function updateProjectTypeChart() {
     const ctx = document.getElementById('projectTypeChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('Canvas projectTypeChart não encontrado');
+        return;
+    }
     
+    // Destruir gráfico anterior
     if (charts.projectType) {
         charts.projectType.destroy();
+        charts.projectType = null;
     }
     
     // Agrupar por tipo de ponto
@@ -614,7 +739,7 @@ function updateProjectTypeChart() {
         'Remodelamento D': 0
     };
     
-    const relevantProductions = currentUserData.role === 'admin' 
+    const relevantProductions = currentUserData && currentUserData.role === 'admin' 
         ? allProductions 
         : allProductions.filter(p => p.userId === currentUser.uid);
     
@@ -629,32 +754,87 @@ function updateProjectTypeChart() {
         }
     });
     
-    charts.projectType = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(typeData),
-            datasets: [{
-                data: Object.values(typeData),
-                backgroundColor: [
-                    '#ff6384',
-                    '#36a2eb',
-                    '#cc65fe',
-                    '#ffce56',
-                    '#4bc0c0',
-                    '#9966ff'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+    // Filtrar apenas tipos com dados
+    const filteredTypes = Object.entries(typeData).filter(([key, value]) => value > 0);
+    
+    console.log('Dados do gráfico de tipos de projeto:', filteredTypes);
+    
+    if (filteredTypes.length === 0) {
+        const context = ctx.getContext('2d');
+        context.clearRect(0, 0, ctx.width, ctx.height);
+        context.font = '16px Arial';
+        context.fillStyle = '#666';
+        context.textAlign = 'center';
+        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        return;
+    }
+    
+    const colors = [
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 205, 86, 0.8)',
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(153, 102, 255, 0.8)',
+        'rgba(255, 159, 64, 0.8)'
+    ];
+    
+    const borderColors = [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 205, 86, 1)',
+        'rgba(75, 192, 192, 1)',
+        'rgba(153, 102, 255, 1)',
+        'rgba(255, 159, 64, 1)'
+    ];
+    
+    try {
+        charts.projectType = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: filteredTypes.map(([key]) => key),
+                datasets: [{
+                    data: filteredTypes.map(([, value]) => value),
+                    backgroundColor: colors.slice(0, filteredTypes.length),
+                    borderColor: borderColors.slice(0, filteredTypes.length),
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                return `${context.label}: ${context.raw} pontos (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+        console.log('Gráfico de tipos de projeto criado com sucesso');
+    } catch (error) {
+        console.error('Erro ao criar gráfico de tipos de projeto:', error);
+    }
 }
 
 // Carregar histórico do usuário
@@ -688,11 +868,9 @@ function loadUserHistory() {
                     <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
                         ✏️
                     </button>
-                    ${currentUserData.role === 'admin' || currentUserData.id === p.userId ? `
-                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
-                            🗑️
-                        </button>
-                    ` : ''}
+                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
+                        🗑️
+                    </button>
                 </div>
             </div>
         </div>
@@ -737,11 +915,9 @@ function filterHistory() {
                     <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
                         ✏️
                     </button>
-                    ${currentUserData.role === 'admin' ? `
-                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
-                            🗑️
-                        </button>
-                    ` : ''}
+                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
+                        🗑️
+                    </button>
                 </div>
             </div>
         </div>
@@ -1832,3 +2008,121 @@ if (document.readyState === 'loading') {
 } else {
     setupEditModalEvents();
 }
+
+// Funções de Edição de Produção
+let currentEditingProductionId = null;
+
+function calculateEditTotal() {
+    const fields = ["editRetrofit1", "editRetrofit2", "editRetrofit3", "editRetrofit4", "editRemodelagemV", "editRemodelagemD"];
+    let total = 0;
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            total += parseInt(element.value) || 0;
+        }
+    });
+    document.getElementById("editTotalPoints").textContent = total;
+}
+
+async function editProduction(productionId) {
+    currentEditingProductionId = productionId;
+    const production = allProductions.find(p => p.id === productionId);
+
+    if (!production) {
+        showError("Produção não encontrada.");
+        return;
+    }
+
+    document.getElementById("editProjectDate").value = production.date;
+    document.getElementById("editPlaza").value = production.plaza;
+    document.getElementById("editProjectType").value = production.projectType;
+    document.getElementById("editRetrofit1").value = production.points?.retrofit1 || 0;
+    document.getElementById("editRetrofit2").value = production.points?.retrofit2 || 0;
+    document.getElementById("editRetrofit3").value = production.points?.retrofit3 || 0;
+    document.getElementById("editRetrofit4").value = production.points?.retrofit4 || 0;
+    document.getElementById("editRemodelagemV").value = production.points?.remodelagemV || 0;
+    document.getElementById("editRemodelagemD").value = production.points?.remodelagemD || 0;
+    calculateEditTotal();
+
+    document.getElementById("editModal").classList.remove("hidden");
+}
+
+function hideEditModal() {
+    document.getElementById("editModal").classList.add("hidden");
+    currentEditingProductionId = null;
+}
+
+async function updateProduction() {
+    if (!currentEditingProductionId) {
+        showError("Nenhuma produção selecionada para edição.");
+        return;
+    }
+
+    try {
+        showButtonLoading("updateBtn");
+
+        const updatedProduction = {
+            date: document.getElementById("editProjectDate").value,
+            plaza: document.getElementById("editPlaza").value,
+            projectType: document.getElementById("editProjectType").value,
+            points: {
+                retrofit1: parseInt(document.getElementById("editRetrofit1").value) || 0,
+                retrofit2: parseInt(document.getElementById("editRetrofit2").value) || 0,
+                retrofit3: parseInt(document.getElementById("editRetrofit3").value) || 0,
+                retrofit4: parseInt(document.getElementById("editRetrofit4").value) || 0,
+                remodelagemV: parseInt(document.getElementById("editRemodelagemV").value) || 0,
+                remodelagemD: parseInt(document.getElementById("editRemodelagemD").value) || 0
+            },
+            total: parseInt(document.getElementById("editTotalPoints").textContent),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection(COLLECTIONS.PRODUCTIONS).doc(currentEditingProductionId).update(updatedProduction);
+
+        await loadAllData();
+        updateDashboard();
+        loadUserHistory();
+        hideEditModal();
+        showSuccess("✅ Produção atualizada com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao atualizar produção:", error);
+        showError("Erro ao atualizar produção. Tente novamente.");
+    } finally {
+        hideButtonLoading("updateBtn");
+    }
+}
+
+// Função para deletar produção (já existente, apenas para garantir que está no contexto)
+async function deleteProduction(productionId) {
+    if (currentUserData.role !== 'admin' && currentUserData.id !== allProductions.find(p => p.id === productionId)?.userId) {
+        showError('Você não tem permissão para deletar esta produção.');
+        return;
+    }
+
+    const productionToDelete = allProductions.find(p => p.id === productionId);
+    if (!productionToDelete) return;
+
+    if (!confirm(`❓ Tem certeza que deseja deletar a produção de ${new Date(productionToDelete.date).toLocaleDateString('pt-BR')} - ${productionToDelete.plaza}?`)) {
+        return;
+    }
+
+    try {
+        await db.collection(COLLECTIONS.PRODUCTIONS).doc(productionId).delete();
+
+        await loadAllData();
+        updateDashboard();
+        loadUserHistory();
+        showSuccess('✅ Produção deletada com sucesso!');
+
+    } catch (error) {
+        console.error('Erro ao deletar produção:', error);
+        showError('Erro ao deletar produção.');
+    }
+}
+
+// Chamar setupChartResize na inicialização
+initializeApp();
+setupChartResize();
+
+

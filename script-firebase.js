@@ -877,7 +877,7 @@ function loadUserHistory() {
         <div class="production-item">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <strong>📅 ${new Date(p.date).toLocaleDateString('pt-BR')}</strong>
+                    <strong>📅 ${new Date(p.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong>
                     <br><strong>🏛️ Praça:</strong> ${p.plaza}
                     <br><strong>🎯 Projeto:</strong> ${p.projectType}
                     <br><strong>📊 Pontos:</strong> ${p.total}
@@ -923,7 +923,7 @@ function filterHistory() {
         <div class="production-item">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <strong>📅 ${new Date(p.date).toLocaleDateString('pt-BR')}</strong>
+                    <strong>📅 ${new Date(p.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong>
                     <br><strong>🏛️ Praça:</strong> ${p.plaza}
                     <br><strong>🎯 Projeto:</strong> ${p.projectType}
                     <br><strong>📊 Pontos:</strong> ${p.total}

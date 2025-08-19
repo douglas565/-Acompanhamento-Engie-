@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Produtividade - Equipe de Projetos</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Other Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>🔥 Conectando com Firebase...</h2>
+            <p>Aguarde um momento</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Tela de Login -->
+        <div id="loginScreen" class="card login-card hidden">
+            <div class="header">
+                <h1>Sistema de Produtividade</h1>
+                <p>Equipe de Projetos - Curitiba & Florianópolis</p>
+                <div class="firebase-badge">
+                    <span>🔥 Powered by Firebase</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" placeholder="Digite seu email" autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Senha:</label>
+                <input type="password" id="loginPassword" placeholder="Digite sua senha" autocomplete="current-password">
+            </div>
+            
+            <button class="btn" id="loginBtn" style="width: 100%;" onclick="loginUser()">
+                <span id="loginBtnText">Entrar</span>
+                <div id="loginSpinner" class="btn-spinner hidden"></div>
+            </button>
+            
+            <div id="loginError" class="error-message hidden">
+                Email ou senha incorretos!
+            </div>
+            
+            <div class="demo-users">
+                <strong>👥 Usuários de Demonstração:</strong><br>
+                <div class="demo-user" onclick="fillDemoUser('admin@sistema.com', 'admin123')">
+                    <strong>Admin:</strong> admin@sistema.com / admin123
+                </div>
+                <div class="demo-user" onclick="fillDemoUser('eduarda@sistema.com', '123456')">
+                    <strong>Eduarda:</strong> eduarda@sistema.com / 123456
+                </div>
+                <div class="demo-user" onclick="fillDemoUser('joao@sistema.com', '123456')">
+                    <strong>João:</strong> joao@sistema.com / 123456
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tela Principal -->
+        <div id="mainScreen" class="hidden">
+            <div class="user-info">
+                <div>
+                    <strong>Bem-vindo(a), <span id="currentUser"></span></strong>
+                    <span id="userRole"></span> | <span id="currentDate"></span>
+                    <br><small>🔥 Dados sincronizados com Firebase</small>
+                </div>
+                <button class="btn btn-logout" onclick="logoutUser()">Sair</button>
+            </div>
+            
+            <!-- Painel Admin -->
+            <div id="adminPanel" class="admin-panel hidden">
+                <h3>📊 Painel Administrativo</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-success" onclick="exportToExcel()">📥 Exportar Excel</button>
+                    <button class="btn btn-secondary" onclick="showUserManagement()">👥 Gerenciar Usuários</button>
+                    <button class="btn" onclick="syncData()">🔄 Sincronizar Dados</button>
+                </div>
+            </div>
+            
+            <!-- Status de Conexão -->
+            <div id="connectionStatus" class="connection-status">
+                <span id="connectionIcon">🟢</span>
+                <span id="connectionText">Conectado ao Firebase</span>
+            </div>
+            
+            <!-- Estatísticas Gerais -->
+            <div class="card">
+                <h3>📈 Estatísticas Gerais</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPointsToday">0</div>
+                        <div>Pontos Hoje</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPointsMonth">0</div>
+                        <div>Pontos do Mês</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgPointsDay">0</div>
+                        <div>Média Diária</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProjects">0</div>
+                        <div>Projetos Registrados</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulário de Produção -->
+            <div class="card">
+                <h3>📝 Registrar Produção Diária</h3>
+                
+                <form id="productionForm">
+                    <div class="form-group">
+                        <label for="projectDate">Data:</label>
+                        <input type="date" id="projectDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="plaza">Praças:</label>
+                        <input type="text" id="plaza" placeholder="Ex: Praça Elias Abdo Bittar" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectType">Tipo de Projeto:</label>
+                        <textarea id="projectType" placeholder="Ex: Finalizado Luminotécnico, preenchido planilhão e feito croqui" required></textarea>
+                    </div>
+                    
+                    <h4>Pontos de Produção:</h4>
+                    <div class="points-grid">
+                        <div class="point-input">
+                            <label for="retrofit1">Retrofit 1:</label>
+                            <input type="number" id="retrofit1" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit2">Retrofit 2:</label>
+                            <input type="number" id="retrofit2" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit3">Retrofit 3:</label>
+                            <input type="number" id="retrofit3" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit4">Retrofit 4:</label>
+                            <input type="number" id="retrofit4" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="remodelagemV">Remodelamento V:</label>
+                            <input type="number" id="remodelagemV" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="remodelagemD">Remodelamento D:</label>
+                            <input type="number" id="remodelagemD" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="total-points">
+                        Total: <span id="totalPoints">0</span> pontos
+                    </div>
+                    
+                    <button type="submit" class="btn" id="saveBtn" style="width: 100%;">
+                        <span id="saveBtnText">💾 Salvar Produção</span>
+                        <div id="saveSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Gráficos - ESTRUTURA CORRIGIDA SEM RANKING -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📊 Produção por Equipe</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="teamChart" width="400" height="320"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>📈 Produção Mensal</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyChart" width="400" height="320"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>📋 Tipos de Projeto</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="projectTypeChart" width="600" height="320"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Histórico de Produção -->
+            <div class="card">
+                <h3>📋 Meu Histórico de Produção</h3>
+                <div class="form-group">
+                    <input type="text" id="historySearch" placeholder="🔍 Buscar por praça, projeto ou data..." onkeyup="filterHistory()" style="margin-bottom: 15px;">
+                </div>
+                <div id="productionHistory" class="production-list">
+                    <div class="loading-placeholder">
+                        <div class="spinner-small"></div>
+                        <p>Carregando histórico...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de Gerenciamento de Usuários -->
+        <div id="userModal" class="modal-overlay hidden">
+            <div class="modal-content card">
+                <h3>👥 Gerenciamento de Usuários</h3>
+                
+                <div class="form-group">
+                    <label for="newUserEmail">Email do Novo Usuário:</label>
+                    <input type="email" id="newUserEmail" placeholder="usuario@empresa.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserPassword">Senha:</label>
+                    <input type="password" id="newUserPassword" placeholder="Senha (mín. 6 caracteres)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserName">Nome:</label>
+                    <input type="text" id="newUserName" placeholder="Nome do usuário">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserTeam">Equipe:</label>
+                    <select id="newUserTeam">
+                        <option value="Curitiba">Curitiba</option>
+                        <option value="Florianópolis">Florianópolis</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="newUserAdmin"> Administrador
+                    </label>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="hideUserManagement()">Cancelar</button>
+                    <button class="btn" id="addUserBtn" onclick="addUser()">
+                        <span id="addUserBtnText">Adicionar Usuário</span>
+                        <div id="addUserSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </div>
+                
+                <div id="userList" class="user-list">
+                    <div class="loading-placeholder">
+                        <div class="spinner-small"></div>
+                        <p>Carregando usuários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="script-firebase.js"></script>
+</body>
+</html>

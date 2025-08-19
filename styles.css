@@ -874,3 +874,18 @@ body {
         height: 220px;
     }
 }
+
+.btn-logout {
+    background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%);
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    color: #333;
+    border: 1px solid #ffd89b;
+}
+
+.btn-edit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fcb69f 0%, #ffecd2 100%);
+    box-shadow: 0 8px 25px rgba(252, 182, 159, 0.3);
+}

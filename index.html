@@ -215,6 +215,68 @@
             </div>
         </div>
         
+                <!-- Modal de Edição de Produção -->
+        <div id="editModal" class="modal-overlay hidden">
+            <div class="modal-content card">
+                <h3>✏️ Editar Produção</h3>
+                
+                <div class="form-group">
+                    <label for="editProjectDate">Data:</label>
+                    <input type="date" id="editProjectDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editPlaza">Praças:</label>
+                    <input type="text" id="editPlaza" placeholder="Ex: Praça Elias Abdo Bittar" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectType">Tipo de Projeto:</label>
+                    <textarea id="editProjectType" placeholder="Ex: Finalizado Luminotécnico, preenchido planilhão e feito croqui" required></textarea>
+                </div>
+                
+                <h4>Pontos de Produção:</h4>
+                <div class="points-grid">
+                    <div class="point-input">
+                        <label for="editRetrofit1">Retrofit 1:</label>
+                        <input type="number" id="editRetrofit1" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit2">Retrofit 2:</label>
+                        <input type="number" id="editRetrofit2" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit3">Retrofit 3:</label>
+                        <input type="number" id="editRetrofit3" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit4">Retrofit 4:</label>
+                        <input type="number" id="editRetrofit4" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRemodelagemV">Remodelamento V:</label>
+                        <input type="number" id="editRemodelagemV" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRemodelagemD">Remodelamento D:</label>
+                        <input type="number" id="editRemodelagemD" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                </div>
+                
+                <div class="total-points">
+                    Total: <span id="editTotalPoints">0</span> pontos
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="hideEditModal()">Cancelar</button>
+                    <button class="btn" id="updateBtn" onclick="updateProduction()">
+                        <span id="updateBtnText">💾 Salvar Alterações</span>
+                        <div id="updateSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal de Gerenciamento de Usuários -->
         <div id="userModal" class="modal-overlay hidden">
             <div class="modal-content card">

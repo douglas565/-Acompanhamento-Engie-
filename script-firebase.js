@@ -684,11 +684,16 @@ function loadUserHistory() {
                         R4: ${p.points?.retrofit4 || 0} | RV: ${p.points?.remodelagemV || 0} | RD: ${p.points?.remodelagemD || 0}
                     </div>
                 </div>
-                ${currentUserData.role === 'admin' ? `
-                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;" onclick="deleteProduction('${p.id}')">
-                        🗑️
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
+                        ✏️
                     </button>
-                ` : ''}
+                    ${currentUserData.role === 'admin' ? `
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
+                            🗑️
+                        </button>
+                    ` : ''}
+                </div>
             </div>
         </div>
     `).join('');

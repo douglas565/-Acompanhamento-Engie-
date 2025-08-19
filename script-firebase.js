@@ -685,9 +685,13 @@ function loadUserHistory() {
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
-                        ✏️
-                    </button>
+                    <!-- Botão de edição: sempre visível para o próprio usuário, admins podem editar qualquer produção -->
+                    ${(p.userId === currentUser.uid || currentUserData.role === 'admin') ? `
+                        <button class="btn btn-edit" style="padding: 5px 10px; font-size: 12px;" onclick="editProduction('${p.id}')" title="Editar produção">
+                            ✏️
+                        </button>
+                    ` : ''}
+                    <!-- Botão de deletar: apenas para admins -->
                     ${currentUserData.role === 'admin' ? `
                         <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteProduction('${p.id}')" title="Deletar produção">
                             🗑️

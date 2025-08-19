@@ -456,218 +456,9 @@ function updateCharts() {
     }, 100);
 }
 
-function updateTeamChart() {
-    const ctx = document.getElementById('teamChart');
-    if (!ctx) {
-        console.warn('Canvas teamChart não encontrado');
-        return;
-    }
-    
-    // Destruir gráfico anterior
-    if (charts.team) {
-        charts.team.destroy();
-        charts.team = null;
-    }
-    
-    const curitibaPoints = allProductions
-        .filter(p => p.team === 'Curitiba')
-        .reduce((sum, p) => sum + p.total, 0);
-        
-    const florianopolisPoints = allProductions
-        .filter(p => p.team === 'Florianópolis')
-        .reduce((sum, p) => sum + p.total, 0);
-    
-    console.log('Dados do gráfico de equipes:', { curitibaPoints, florianopolisPoints });
-    
-    // Verificar se há dados
-    if (curitibaPoints === 0 && florianopolisPoints === 0) {
-        const context = ctx.getContext('2d');
-        context.clearRect(0, 0, ctx.width, ctx.height);
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
-        return;
-    }
-    
-    try {
-        charts.team = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Curitiba', 'Florianópolis'],
-                datasets: [{
-                    data: [curitibaPoints, florianopolisPoints],
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(118, 75, 162, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(102, 126, 234, 1)',
-                        'rgba(118, 75, 162, 1)'
-                    ],
-                    borderWidth: 2,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            font: {
-                                size: 14
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        cornerRadius: 6,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
-                                return `${context.label}: ${context.raw} pontos (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        console.log('Gráfico de equipes criado com sucesso');
-    } catch (error) {
-        console.error('Erro ao criar gráfico de equipes:', error);
-    }
-}
 
-function updateMonthlyChart() {
-    const ctx = document.getElementById('monthlyChart');
-    if (!ctx) {
-        console.warn('Canvas monthlyChart não encontrado');
-        return;
-    }
-    
-    // Destruir gráfico anterior
-    if (charts.monthly) {
-        charts.monthly.destroy();
-        charts.monthly = null;
-    }
-    
-    // Agrupar por mês
-    const monthlyData = {};
-    const relevantProductions = currentUserData && currentUserData.role === 'admin' 
-        ? allProductions 
-        : allProductions.filter(p => p.userId === currentUser.uid);
-    
-    relevantProductions.forEach(p => {
-        if (p.date) {
-            const month = p.date.substring(0, 7);
-            monthlyData[month] = (monthlyData[month] || 0) + p.total;
-        }
-    });
-    
-    const months = Object.keys(monthlyData).sort();
-    const values = months.map(m => monthlyData[m]);
-    
-    console.log('Dados do gráfico mensal:', { months, values });
-    
-    if (months.length === 0) {
-        const context = ctx.getContext('2d');
-        context.clearRect(0, 0, ctx.width, ctx.height);
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
-        return;
-    }
-    
-    try {
-        charts.monthly = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: months.map(m => {
-                    const [year, month] = m.split('-');
-                    const date = new Date(year, month - 1);
-                    return date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-                }),
-                datasets: [{
-                    label: 'Pontos de Produção',
-                    data: values,
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        cornerRadius: 6,
-                        callbacks: {
-                            title: function(tooltipItems) {
-                                return `Mês: ${tooltipItems[0].label}`;
-                            },
-                            label: function(context) {
-                                return `Pontos: ${context.raw}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 10,
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-        console.log('Gráfico mensal criado com sucesso');
-    } catch (error) {
-        console.error('Erro ao criar gráfico mensal:', error);
-    }
-}
+
+
 
 function updateUserChart() {
     const ctx = document.getElementById('userChart');
@@ -757,15 +548,13 @@ function updateProjectTypeChart() {
     // Filtrar apenas tipos com dados
     const filteredTypes = Object.entries(typeData).filter(([key, value]) => value > 0);
     
-    console.log('Dados do gráfico de tipos de projeto:', filteredTypes);
-    
     if (filteredTypes.length === 0) {
-        const context = ctx.getContext('2d');
+        const context = ctx.getContext("2d");
         context.clearRect(0, 0, ctx.width, ctx.height);
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        context.font = "16px Arial";
+        context.fillStyle = "#666";
+        context.textAlign = "center";
+        context.fillText("Nenhum dado disponível", ctx.width/2, ctx.height/2);
         return;
     }
     
@@ -1297,85 +1086,7 @@ function setupChartResize() {
     });
 }
 
-// Função corrigida para gráfico de equipes
-function updateTeamChart() {
-    const ctx = document.getElementById('teamChart');
-    if (!ctx) return;
-    
-    // Destruir gráfico anterior
-    if (charts.team) {
-        charts.team.destroy();
-    }
-    
-    const curitibaPoints = allProductions
-        .filter(p => p.team === 'Curitiba')
-        .reduce((sum, p) => sum + p.total, 0);
-        
-    const florianopolisPoints = allProductions
-        .filter(p => p.team === 'Florianópolis')
-        .reduce((sum, p) => sum + p.total, 0);
-    
-    // Verificar se há dados
-    if (curitibaPoints === 0 && florianopolisPoints === 0) {
-        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-        const context = ctx.getContext('2d');
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
-        return;
-    }
-    
-    charts.team = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Curitiba', 'Florianópolis'],
-            datasets: [{
-                data: [curitibaPoints, florianopolisPoints],
-                backgroundColor: [
-                    'rgba(102, 126, 234, 0.8)',
-                    'rgba(118, 75, 162, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(102, 126, 234, 1)',
-                    'rgba(118, 75, 162, 1)'
-                ],
-                borderWidth: 2,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    cornerRadius: 6,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.raw / total) * 100).toFixed(1);
-                            return `${context.label}: ${context.raw} pontos (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
+
 
 // Função corrigida para gráfico mensal
 function updateMonthlyChart() {
@@ -1400,15 +1111,13 @@ function updateMonthlyChart() {
     });
     
     const months = Object.keys(monthlyData).sort();
-    const values = months.map(m => monthlyData[m]);
-    
     if (months.length === 0) {
-        const context = ctx.getContext('2d');
+        const context = ctx.getContext("2d");
         context.clearRect(0, 0, ctx.width, ctx.height);
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        context.font = "16px Arial";
+        context.fillStyle = "#666";
+        context.textAlign = "center";
+        context.fillText("Nenhum dado disponível", ctx.width/2, ctx.height/2);
         return;
     }
     
@@ -2124,5 +1833,3 @@ async function deleteProduction(productionId) {
 // Chamar setupChartResize na inicialização
 initializeApp();
 setupChartResize();
-
-

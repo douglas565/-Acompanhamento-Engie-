@@ -181,6 +181,15 @@ async function loadUserData(uid) {
     }
 }
 
+
+function waitForChart(){
+    if (typeof Chart !== 'undefined'){
+        updateCharts();
+    }else{
+        seyTimeout(waitForChart, 100);
+    }
+}
+
 // Carregar todos os dados
 async function loadAllData() {
     try {

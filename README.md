@@ -31,7 +31,6 @@ Sistema web para gerenciamento de produtividade das equipes de projetistas de Cu
 - **4 Gráficos interativos**:
   - 🥧 Produção por equipe (Curitiba vs Florianópolis)
   - 📊 Produção mensal ao longo do tempo
-  - 🏆 Ranking individual de produtividade
   - 📋 Distribuição por tipos de projeto
 
 ### 🔧 Recursos Administrativos

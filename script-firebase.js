@@ -204,6 +204,64 @@ async function loadAllData() {
                 ...doc.data()
             }));
         }
+        // Adicionar dados de demonstração se não houver produções
+if (allProductions.length === 0) {
+    console.log('Adicionando dados de demonstração para gráficos...');
+    allProductions = [
+        {
+            id: 'demo1',
+            userId: currentUser.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            team: 'Curitiba',
+            date: '2025-08-15',
+            plaza: 'Praça Teste 1',
+            projectType: 'Projeto Demo 1',
+            points: { retrofit1: 10, retrofit2: 5, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 0 },
+            total: 15,
+            createdAt: new Date('2025-08-15T10:00:00Z')
+        },
+        {
+            id: 'demo2',
+            userId: currentUser.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            team: 'Florianópolis',
+            date: '2025-08-16',
+            plaza: 'Praça Teste 2',
+            projectType: 'Projeto Demo 2',
+            points: { retrofit1: 0, retrofit2: 0, retrofit3: 8, retrofit4: 7, remodelagemV: 0, remodelagemD: 0 },
+            total: 15,
+            createdAt: new Date('2025-08-16T11:00:00Z')
+        },
+        {
+            id: 'demo3',
+            userId: currentUser.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            team: 'Curitiba',
+            date: '2025-08-17',
+            plaza: 'Praça Teste 3',
+            projectType: 'Projeto Demo 3',
+            points: { retrofit1: 12, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 5, remodelagemD: 0 },
+            total: 17,
+            createdAt: new Date('2025-08-17T12:00:00Z')
+        },
+        {
+            id: 'demo4',
+            userId: currentUser.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            team: 'Florianópolis',
+            date: '2025-08-18',
+            plaza: 'Praça Teste 4',
+            projectType: 'Projeto Demo 4',
+            points: { retrofit1: 0, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 10 },
+            total: 10,
+            createdAt: new Date('2025-08-18T13:00:00Z')
+        }
+    ];
+}
         
         updateConnectionStatus('connected', 'Conectado ao Firebase');
         
@@ -450,12 +508,21 @@ function updateStats() {
 
 // Função melhorada para atualizar todos os gráficos
 function updateCharts() {
+
+    console.log('updateCharts() chamada, dados disponíveis:', allProductions.length);
+
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js não está carregado!');
+        return;
+    }
+
     // Verificar se temos dados
     if (!allProductions || allProductions.length === 0) {
         console.log('Nenhum dado de produção disponível para gráficos');
         return;
     }
     
+    console.log('Iniciando renderização dos gráficos...');
     // Inicializar wrappers se necessário
     initializeChartWrappers();
     

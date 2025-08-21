@@ -139,6 +139,37 @@
                         <textarea id="projectType" placeholder="Ex: Finalizado Luminotécnico, preenchido planilhão e feito croqui" required></textarea>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="projectStatus">Status do Projeto:</label>
+                        <select id="projectStatus" required>
+                            <option value="">Selecione o status</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="finalizado">Finalizado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Categorias do Informe:</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryLuminotecnico" value="luminotecnico">
+                                Luminotécnico
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryEletrico" value="eletrico">
+                                Elétrico
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryPlanilhao" value="planilhao">
+                                Planilhão
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryCroqui" value="croqui">
+                                Croqui
+                            </label>
+                        </div>
+                    </div>
+                    
                     <h4>Pontos de Produção:</h4>
                     <div class="points-grid">
                         <div class="point-input">
@@ -233,6 +264,37 @@
                 <div class="form-group">
                     <label for="editProjectType">Tipo de Projeto:</label>
                     <textarea id="editProjectType" placeholder="Ex: Finalizado Luminotécnico, preenchido planilhão e feito croqui" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectStatus">Status do Projeto:</label>
+                    <select id="editProjectStatus" required>
+                        <option value="">Selecione o status</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="finalizado">Finalizado</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Categorias do Informe:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryLuminotecnico" value="luminotecnico">
+                            Luminotécnico
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryEletrico" value="eletrico">
+                            Elétrico
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryPlanilhao" value="planilhao">
+                            Planilhão
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryCroqui" value="croqui">
+                            Croqui
+                        </label>
+                    </div>
                 </div>
                 
                 <h4>Pontos de Produção:</h4>

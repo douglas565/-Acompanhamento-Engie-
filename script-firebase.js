@@ -399,6 +399,20 @@ async function handleProductionSubmit(e) {
         return;
     }
     
+    // Validar se pelo menos uma categoria foi selecionada
+    const categories = {
+        luminotecnico: document.getElementById('categoryLuminotecnico').checked,
+        eletrico: document.getElementById('categoryEletrico').checked,
+        planilhao: document.getElementById('categoryPlanilhao').checked,
+        croqui: document.getElementById('categoryCroqui').checked
+    };
+    
+    const hasCategory = Object.values(categories).some(cat => cat);
+    if (!hasCategory) {
+        showError('Por favor, selecione pelo menos uma categoria do informe');
+        return;
+    }
+    
     try {
         showButtonLoading('saveBtn');
         
@@ -410,6 +424,8 @@ async function handleProductionSubmit(e) {
             date: document.getElementById('projectDate').value,
             plaza: document.getElementById('plaza').value,
             projectType: document.getElementById('projectType').value,
+            status: document.getElementById('projectStatus').value,
+            categories: categories,
             points: {
                 retrofit1: parseInt(document.getElementById('retrofit1').value) || 0,
                 retrofit2: parseInt(document.getElementById('retrofit2').value) || 0,
@@ -947,7 +963,20 @@ function loadUserHistory() {
         return;
     }
     
-    historyDiv.innerHTML = userProductions.map(p => `
+    historyDiv.innerHTML = userProductions.map(p => {
+        // Formatar status
+        const statusText = p.status === 'finalizado' ? '✅ Finalizado' : '🔄 Em Andamento';
+        const statusColor = p.status === 'finalizado' ? '#4CAF50' : '#FF9800';
+        
+        // Formatar categorias
+        const categories = [];
+        if (p.categories?.luminotecnico) categories.push('Luminotécnico');
+        if (p.categories?.eletrico) categories.push('Elétrico');
+        if (p.categories?.planilhao) categories.push('Planilhão');
+        if (p.categories?.croqui) categories.push('Croqui');
+        const categoriesText = categories.length > 0 ? categories.join(', ') : 'Não especificado';
+        
+        return `
         <div class="production-item">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
@@ -955,6 +984,8 @@ function loadUserHistory() {
                     <br><strong>🏛️ Praça:</strong> ${p.plaza}
                     <br><strong>🎯 Projeto:</strong> ${p.projectType}
                     <br><strong>📊 Pontos:</strong> ${p.total}
+                    <br><strong style="color: ${statusColor};">📋 Status:</strong> <span style="color: ${statusColor};">${statusText}</span>
+                    <br><strong>🏷️ Categorias:</strong> ${categoriesText}
                     <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
                         R1: ${p.points?.retrofit1 || 0} | R2: ${p.points?.retrofit2 || 0} | R3: ${p.points?.retrofit3 || 0} | 
                         R4: ${p.points?.retrofit4 || 0} | RV: ${p.points?.remodelagemV || 0} | RD: ${p.points?.remodelagemD || 0}
@@ -970,7 +1001,8 @@ function loadUserHistory() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Função de filtro de histórico
@@ -1042,6 +1074,13 @@ function editProduction(productionId) {
     document.getElementById('editProjectDate').value = production.date || '';
     document.getElementById('editPlaza').value = production.plaza || '';
     document.getElementById('editProjectType').value = production.projectType || '';
+    document.getElementById('editProjectStatus').value = production.status || '';
+    
+    // Preencher categorias
+    document.getElementById('editCategoryLuminotecnico').checked = production.categories?.luminotecnico || false;
+    document.getElementById('editCategoryEletrico').checked = production.categories?.eletrico || false;
+    document.getElementById('editCategoryPlanilhao').checked = production.categories?.planilhao || false;
+    document.getElementById('editCategoryCroqui').checked = production.categories?.croqui || false;
     
     // Preencher pontos
     document.getElementById('editRetrofit1').value = production.points?.retrofit1 || 0;
@@ -1086,6 +1125,11 @@ function hideEditModal() {
     document.getElementById('editProjectDate').value = '';
     document.getElementById('editPlaza').value = '';
     document.getElementById('editProjectType').value = '';
+    document.getElementById('editProjectStatus').value = '';
+    document.getElementById('editCategoryLuminotecnico').checked = false;
+    document.getElementById('editCategoryEletrico').checked = false;
+    document.getElementById('editCategoryPlanilhao').checked = false;
+    document.getElementById('editCategoryCroqui').checked = false;
     document.getElementById('editRetrofit1').value = 0;
     document.getElementById('editRetrofit2').value = 0;
     document.getElementById('editRetrofit3').value = 0;
@@ -1118,9 +1162,24 @@ async function updateProduction() {
     const date = document.getElementById('editProjectDate').value;
     const plaza = document.getElementById('editPlaza').value.trim();
     const projectType = document.getElementById('editProjectType').value.trim();
+    const status = document.getElementById('editProjectStatus').value;
     
-    if (!date || !plaza || !projectType) {
+    if (!date || !plaza || !projectType || !status) {
         showError('Por favor, preencha todos os campos obrigatórios');
+        return;
+    }
+    
+    // Validar se pelo menos uma categoria foi selecionada
+    const categories = {
+        luminotecnico: document.getElementById('editCategoryLuminotecnico').checked,
+        eletrico: document.getElementById('editCategoryEletrico').checked,
+        planilhao: document.getElementById('editCategoryPlanilhao').checked,
+        croqui: document.getElementById('editCategoryCroqui').checked
+    };
+    
+    const hasCategory = Object.values(categories).some(cat => cat);
+    if (!hasCategory) {
+        showError('Por favor, selecione pelo menos uma categoria do informe');
         return;
     }
     
@@ -1131,6 +1190,8 @@ async function updateProduction() {
             date: date,
             plaza: plaza,
             projectType: projectType,
+            status: status,
+            categories: categories,
             points: {
                 retrofit1: parseInt(document.getElementById('editRetrofit1').value) || 0,
                 retrofit2: parseInt(document.getElementById('editRetrofit2').value) || 0,
@@ -1420,6 +1481,11 @@ async function exportToExcel() {
             'Equipe': p.team,
             'Praça': p.plaza,
             'Tipo de Projeto': p.projectType,
+            'Status': p.status === 'finalizado' ? 'Finalizado' : 'Em Andamento',
+            'Luminotécnico': p.categories?.luminotecnico && p.status === 'finalizado' ? 'Finalizado' : (p.categories?.luminotecnico ? 'Em Andamento' : ''),
+            'Elétrico': p.categories?.eletrico && p.status === 'finalizado' ? 'Finalizado' : (p.categories?.eletrico ? 'Em Andamento' : ''),
+            'Planilhão': p.categories?.planilhao && p.status === 'finalizado' ? 'Finalizado' : (p.categories?.planilhao ? 'Em Andamento' : ''),
+            'Croqui': p.categories?.croqui && p.status === 'finalizado' ? 'Finalizado' : (p.categories?.croqui ? 'Em Andamento' : ''),
             'Retrofit 1': p.points?.retrofit1 || 0,
             'Retrofit 2': p.points?.retrofit2 || 0,
             'Retrofit 3': p.points?.retrofit3 || 0,

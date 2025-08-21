@@ -692,68 +692,66 @@ function updateTeamChart() {
 
 // Função corrigida para gráfico mensal
 function updateMonthlyChart() {
-    const ctx = document.getElementById('monthlyChart');
+    const ctx = document.getElementById("monthlyChart");
     if (!ctx) {
-        console.warn('Canvas monthlyChart não encontrado');
+        console.warn("Canvas monthlyChart não encontrado");
         return;
     }
-    
+
     // Destruir gráfico anterior
     if (charts.monthly) {
         charts.monthly.destroy();
         charts.monthly = null;
     }
-    
-    // Agrupar por mês
-    const monthlyData = {};
-    const relevantProductions = currentUserData && currentUserData.role === 'admin' 
+
+    // Agrupar por semana
+    const weeklyData = {};
+    const relevantProductions = currentUserData && currentUserData.role === "admin" 
         ? allProductions 
         : allProductions.filter(p => p.userId === currentUser.uid);
     
     relevantProductions.forEach(p => {
         if (p.date) {
-            const month = p.date.substring(0, 7);
-            monthlyData[month] = (monthlyData[month] || 0) + p.total;
+            const date = new Date(p.date + "T00:00:00"); // Adiciona T00:00:00 para evitar problemas de fuso horário
+            const day = date.getDay(); // 0 = Domingo, 6 = Sábado
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para segunda-feira da semana
+            const monday = new Date(date.setDate(diff));
+            const weekKey = monday.toISOString().substring(0, 10); // Formato YYYY-MM-DD para a segunda-feira da semana
+            weeklyData[weekKey] = (weeklyData[weekKey] || 0) + p.total;
         }
     });
     
-    const months = Object.keys(monthlyData).sort();
-    const values = months.map(m => monthlyData[m]);
+    const weeks = Object.keys(weeklyData).sort();
+    const values = weeks.map(w => weeklyData[w]);
     
-    console.log('Dados do gráfico mensal:', { months, values });
+    console.log("Dados do gráfico semanal:", { weeks, values });
     
-    if (months.length === 0) {
-        const context = ctx.getContext('2d');
+    if (weeks.length === 0) {
+        const context = ctx.getContext("2d");
         context.clearRect(0, 0, ctx.width, ctx.height);
-        context.font = '16px Arial';
-        context.fillStyle = '#666';
-        context.textAlign = 'center';
-        context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
+        context.font = "16px Arial";
+        context.fillStyle = "#666";
+        context.textAlign = "center";
+        context.fillText("Nenhum dado disponível", ctx.width/2, ctx.height/2);
         return;
     }
     
     try {
         charts.monthly = new Chart(ctx, {
-            type: 'line',
+            type: "bar",
             data: {
-                labels: months.map(m => {
-                    const [year, month] = m.split('-');
-                    const date = new Date(year, month - 1);
-                    return date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+                labels: weeks.map(w => {
+                    const date = new Date(w + "T00:00:00");
+                    const endOfWeek = new Date(date);
+                    endOfWeek.setDate(date.getDate() + 6);
+                    return `${date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} - ${endOfWeek.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`;
                 }),
                 datasets: [{
-                    label: 'Pontos de Produção',
+                    label: "Pontos de Produção",
                     data: values,
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2
+                    backgroundColor: "rgba(102, 126, 234, 0.8)",
+                    borderColor: "rgba(102, 126, 234, 1)",
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -761,20 +759,20 @@ function updateMonthlyChart() {
                 maintainAspectRatio: false,
                 interaction: {
                     intersect: false,
-                    mode: 'index'
+                    mode: "index"
                 },
                 plugins: {
                     legend: {
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
+                        backgroundColor: "rgba(0,0,0,0.8)",
+                        titleColor: "#fff",
+                        bodyColor: "#fff",
                         cornerRadius: 6,
                         callbacks: {
                             title: function(tooltipItems) {
-                                return `Mês: ${tooltipItems[0].label}`;
+                                return `Semana: ${tooltipItems[0].label}`;
                             },
                             label: function(context) {
                                 return `Pontos: ${context.raw}`;
@@ -792,7 +790,7 @@ function updateMonthlyChart() {
                             }
                         },
                         grid: {
-                            color: 'rgba(0,0,0,0.1)'
+                            color: "rgba(0,0,0,0.1)"
                         }
                     },
                     x: {
@@ -808,9 +806,9 @@ function updateMonthlyChart() {
                 }
             }
         });
-        console.log('Gráfico mensal criado com sucesso');
+        console.log("Gráfico semanal criado com sucesso");
     } catch (error) {
-        console.error('Erro ao criar gráfico mensal:', error);
+        console.error("Erro ao criar gráfico mensal:", error);
     }
 }
 

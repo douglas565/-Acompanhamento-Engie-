@@ -502,18 +502,28 @@ function updateStats() {
     const userProductions = currentUserData.role === 'admin' 
         ? allProductions 
         : allProductions.filter(p => p.userId === currentUser.uid);
-    
-    // Pontos hoje
+
+    // Filtrar produções para a nova lógica de contagem
+    const filteredForNewLogic = userProductions.filter(p => {
+        const allCategoriesSelected = p.categories && 
+                                      p.categories.luminotecnico && 
+                                      p.categories.eletrico && 
+                                      p.categories.planilhao && 
+                                      p.categories.croqui;
+        return p.status === 'finalizado' && allCategoriesSelected;
+    });
+
+    // Pontos hoje (mantém a lógica original, mas pode ser ajustada se necessário)
     const todayPoints = userProductions
         .filter(p => p.date === today)
         .reduce((sum, p) => sum + p.total, 0);
     
-    // Pontos do mês
+    // Pontos do mês (mantém a lógica original, mas pode ser ajustada se necessário)
     const monthPoints = userProductions
         .filter(p => p.date && p.date.startsWith(currentMonth))
         .reduce((sum, p) => sum + p.total, 0);
     
-    // Média diária
+    // Média diária (mantém a lógica original, mas pode ser ajustada se necessário)
     const daysWithProduction = [...new Set(userProductions.map(p => p.date))].length;
     const avgPoints = daysWithProduction > 0 ? Math.round(monthPoints / daysWithProduction) : 0;
     
@@ -522,7 +532,7 @@ function updateStats() {
         'totalPointsToday': todayPoints,
         'totalPointsMonth': monthPoints,
         'avgPointsDay': avgPoints,
-        'totalProjects': userProductions.length
+        'totalProjects': filteredForNewLogic.length // Usar a nova lógica aqui
     };
     
     Object.entries(elements).forEach(([id, value]) => {

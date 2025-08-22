@@ -391,6 +391,7 @@ function setupFormListener() {
 }
 
 // Salvar produção
+// VERSÃO CORRIGIDA DA FUNÇÃO handleProductionSubmit
 async function handleProductionSubmit(e) {
     e.preventDefault();
     
@@ -401,10 +402,10 @@ async function handleProductionSubmit(e) {
     
     // Validar se pelo menos uma categoria foi selecionada
     const categories = {
-        luminotecnico: document.getElementById('categoryLuminotecnico').checked,
-        eletrico: document.getElementById('categoryEletrico').checked,
-        planilhao: document.getElementById('categoryPlanilhao').checked,
-        croqui: document.getElementById('categoryCroqui').checked
+        luminotecnico: document.getElementById('categoryLuminotecnico')?.checked || false,
+        eletrico: document.getElementById('categoryEletrico')?.checked || false,
+        planilhao: document.getElementById('categoryPlanilhao')?.checked || false,
+        croqui: document.getElementById('categoryCroqui')?.checked || false
     };
     
     const hasCategory = Object.values(categories).some(cat => cat);
@@ -416,27 +417,42 @@ async function handleProductionSubmit(e) {
     try {
         showButtonLoading('saveBtn');
         
+        // CORREÇÃO: Usar optional chaining (?.) para evitar erros de null
+        const projectDateEl = document.getElementById('projectDate');
+        const plazaEl = document.getElementById('plaza');
+        const projectTypeEl = document.getElementById('projectType');
+        const projectStatusEl = document.getElementById('projectStatus');
+        
+        // Verificar se os elementos existem antes de acessar suas propriedades
+        if (!projectDateEl) {
+            console.error('Elemento projectDate não encontrado');
+            showError('Erro: campo de data não encontrado no formulário');
+            return;
+        }
+        
         const production = {
             userId: currentUser.uid,
             userEmail: currentUserData.email,
             userName: currentUserData.name || currentUserData.email.split('@')[0],
             team: currentUserData.team,
-            date: document.getElementById('projectDate').value,
-            plaza: document.getElementById('plaza').value,
-            projectType: document.getElementById('projectType').value,
-            status: document.getElementById('projectStatus').value,
+            date: projectDateEl.value || new Date().toISOString().split('T')[0], // usar data atual como fallback
+            plaza: plazaEl?.value || 'N/A',
+            projectType: projectTypeEl?.value || 'N/A',
+            status: projectStatusEl?.value || 'Em andamento',
             categories: categories,
             points: {
-                retrofit1: parseInt(document.getElementById('retrofit1').value) || 0,
-                retrofit2: parseInt(document.getElementById('retrofit2').value) || 0,
-                retrofit3: parseInt(document.getElementById('retrofit3').value) || 0,
-                retrofit4: parseInt(document.getElementById('retrofit4').value) || 0,
-                remodelagemV: parseInt(document.getElementById('remodelagemV').value) || 0,
-                remodelagemD: parseInt(document.getElementById('remodelagemD').value) || 0
+                retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
+                retrofit2: parseInt(document.getElementById('retrofit2')?.value) || 0,
+                retrofit3: parseInt(document.getElementById('retrofit3')?.value) || 0,
+                retrofit4: parseInt(document.getElementById('retrofit4')?.value) || 0,
+                remodelagemV: parseInt(document.getElementById('remodelagemV')?.value) || 0,
+                remodelagemD: parseInt(document.getElementById('remodelagemD')?.value) || 0
             },
-            total: parseInt(document.getElementById('totalPoints').textContent),
+            total: parseInt(document.getElementById('totalPoints')?.textContent) || 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
+        
+        console.log('Dados a serem salvos:', production); // Log para debug
         
         // Salvar no Firebase
         await db.collection(COLLECTIONS.PRODUCTIONS).add(production);
@@ -445,7 +461,10 @@ async function handleProductionSubmit(e) {
         await loadAllData();
         
         // Reset form
-        document.getElementById('productionForm').reset();
+        const form = document.getElementById('productionForm');
+        if (form) {
+            form.reset();
+        }
         setCurrentDate();
         calculateTotal();
         
@@ -456,10 +475,44 @@ async function handleProductionSubmit(e) {
         
     } catch (error) {
         console.error('Erro ao salvar produção:', error);
-        showError('Erro ao salvar produção. Tente novamente.');
+        showError(`Erro ao salvar produção: ${error.message}`);
     } finally {
         hideButtonLoading('saveBtn');
     }
+}
+
+// FUNÇÃO ADICIONAL PARA VERIFICAR SE TODOS OS ELEMENTOS EXISTEM
+function debugFormElements() {
+    console.log('=== DEBUG DOS ELEMENTOS DO FORMULÁRIO ===');
+    
+    const elementsToCheck = [
+        'projectDate',
+        'plaza', 
+        'projectType',
+        'projectStatus',
+        'categoryLuminotecnico',
+        'categoryEletrico', 
+        'categoryPlanilhao',
+        'categoryCroqui',
+        'retrofit1',
+        'retrofit2',
+        'retrofit3', 
+        'retrofit4',
+        'remodelagemV',
+        'remodelagemD',
+        'totalPoints'
+    ];
+    
+    elementsToCheck.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ ${id}: encontrado`);
+        } else {
+            console.error(`❌ ${id}: NÃO ENCONTRADO`);
+        }
+    });
+    
+    console.log('=== FIM DO DEBUG ===');
 }
 
 // Função para mostrar mensagem de sucesso

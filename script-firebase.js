@@ -167,7 +167,7 @@ async function loadUserData(uid) {
             const userData = {
                 email: currentUser.email,
                 name: currentUser.email.split('@')[0],
-                team: 'Curitiba',
+                team: 'Cadastrar Time',
                 role: 'user',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };

@@ -412,6 +412,19 @@ async function handleProductionSubmit(e) {
         return;
     }
     
+    // CORREÇÃO: Declarar todas as variáveis no início
+    const projectDateEl = document.getElementById('projectDate');
+    const plazaEl = document.getElementById('plaza');
+    const projectTypeEl = document.getElementById('projectType');
+    const projectStatusEl = document.getElementById('projectStatus'); // MOVIDO PARA CIMA
+    
+    // Verificar se os elementos existem antes de acessar suas propriedades
+    if (!projectDateEl) {
+        console.error('Elemento projectDate não encontrado');
+        showError('Erro: campo de data não encontrado no formulário');
+        return;
+    }
+    
     // Validar se pelo menos uma categoria foi selecionada
     const categories = {
         luminotecnico: document.getElementById('categoryLuminotecnico')?.checked || false,
@@ -441,28 +454,15 @@ async function handleProductionSubmit(e) {
     try {
         showButtonLoading('saveBtn');
         
-        // CORREÇÃO: Usar optional chaining (?.) para evitar erros de null
-        const projectDateEl = document.getElementById('projectDate');
-        const plazaEl = document.getElementById('plaza');
-        const projectTypeEl = document.getElementById('projectType');
-        const projectStatusEl = document.getElementById('projectStatus');
-        
-        // Verificar se os elementos existem antes de acessar suas propriedades
-        if (!projectDateEl) {
-            console.error('Elemento projectDate não encontrado');
-            showError('Erro: campo de data não encontrado no formulário');
-            return;
-        }
-        
         const production = {
             userId: currentUser.uid,
             userEmail: currentUserData.email,
             userName: currentUserData.name || currentUserData.email.split('@')[0],
             team: currentUserData.team,
-            date: projectDateEl.value || new Date().toISOString().split('T')[0], // usar data atual como fallback
+            date: projectDateEl.value || new Date().toISOString().split('T')[0],
             plaza: plazaEl?.value || 'N/A',
             projectType: projectTypeEl?.value || 'N/A',
-            status: statusProjeto, // Usar o status calculado (pode ser 'finalizado' automaticamente)
+            status: statusProjeto,
             categories: categories,
             points: {
                 retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
@@ -477,12 +477,12 @@ async function handleProductionSubmit(e) {
             // Adicionar campos de finalização automática se aplicável
             ...(statusProjeto === 'finalizado' && {
                 dataFinalizacao: new Date().toISOString(),
-                finalizadoAutomaticamente: true,
+                finalizadoAutomaticamente: todasObrigatoriasCompletas,
                 categoriasObrigatoriasCompletas: todasObrigatoriasCompletas
             })
         };
         
-        console.log('Dados a serem salvos:', production); // Log para debug
+        console.log('Dados a serem salvos:', production);
         
         // Salvar no Firebase
         await db.collection(COLLECTIONS.PRODUCTIONS).add(production);
@@ -555,7 +555,7 @@ function showSuccess(message) {
     // Criar elemento de sucesso temporário
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message';
-    successDiv.textContent = message;
+    successDiv.innerHTML = message.replace(/\n/g, '<br>'); // Permitir quebras de linha
     successDiv.style.cssText = `
         position: fixed;
         top: 20px;
@@ -567,13 +567,21 @@ function showSuccess(message) {
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         z-index: 10000;
         font-weight: bold;
+        max-width: 300px;
+        line-height: 1.4;
+        animation: slideInRight 0.3s ease-out;
     `;
     
     document.body.appendChild(successDiv);
     
     setTimeout(() => {
-        successDiv.remove();
-    }, 3000);
+        successDiv.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 300);
+    }, 4000);
 }
 
 // Atualizar dashboard
@@ -593,12 +601,11 @@ function updateStats() {
 
     // Filtrar produções para a nova lógica de contagem
     const filteredForNewLogic = userProductions.filter(p => {
-        const allCategoriesSelected = p.categories && 
+        const categoriasObrigatorias = p.categories && 
                                       p.categories.luminotecnico && 
                                       p.categories.eletrico && 
-                                      p.categories.planilhao && 
-                                      p.categories.croqui;
-        return p.status === 'finalizado' && allCategoriesSelected;
+                                      p.categories.planilhao;
+        return p.status === 'finalizado' && categoriasObrigatorias;
     });
 
     // Pontos hoje (mantém a lógica original, mas pode ser ajustada se necessário)
@@ -1700,6 +1707,7 @@ function setupEditModalEvents() {
         }
     });
 }
+
 
 // Chamar setupEditModalEvents após o DOM estar carregado
 if (document.readyState === 'loading') {

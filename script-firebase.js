@@ -1159,13 +1159,60 @@ function filterHistory() {
 // FUNÇÕES DE EDIÇÃO DE PRODUÇÃO
 let currentEditId = null;
 
+function debugEditModal() {
+    console.log('=== DEBUG DO MODAL DE EDIÇÃO ===');
+    
+    const modal = document.getElementById('editModal');
+    console.log('Modal encontrado:', !!modal);
+    
+    if (modal) {
+        console.log('Modal classes:', modal.className);
+        console.log('Modal hidden:', modal.classList.contains('hidden'));
+    }
+    
+    const elementsToCheck = [
+        'editProjectDate',
+        'editPlaza', 
+        'editProjectType',
+        'editProjectStatus',
+        'editCategoryLuminotecnico',
+        'editCategoryEletrico', 
+        'editCategoryPlanilhao',
+        'editCategoryCroqui',
+        'editRetrofit1',
+        'editRetrofit2',
+        'editRetrofit3', 
+        'editRetrofit4',
+        'editRemodelagemV',
+        'editRemodelagemD',
+        'editTotalPoints'
+    ];
+    
+    elementsToCheck.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ ${id}: encontrado`);
+        } else {
+            console.error(`❌ ${id}: NÃO ENCONTRADO`);
+        }
+    });
+    
+    console.log('=== FIM DO DEBUG ===');
+}
+
 // Função para editar produção
 function editProduction(productionId) {
+    console.log('=== INICIANDO EDIÇÃO DA PRODUÇÃO ===');
+    console.log('Production ID:', productionId);
+    
     const production = allProductions.find(p => p.id === productionId);
     if (!production) {
+        console.error('Produção não encontrada para ID:', productionId);
         showError('Produção não encontrada');
         return;
     }
+    
+    console.log('Produção encontrada:', production);
     
     // Verificar permissões
     if (production.userId !== currentUser.uid && currentUserData.role !== 'admin') {
@@ -1174,35 +1221,72 @@ function editProduction(productionId) {
     }
     
     currentEditId = productionId;
+    console.log('currentEditId definido como:', currentEditId);
     
-    // Mostrar o modal de edição
-    document.getElementById("editModal").classList.remove("hidden");
-
-    // Preencher o modal de edição
-    document.getElementById("editProjectDate").value = production.date || "";
-    document.getElementById("editPlaza").value = production.plaza || "";
-    document.getElementById("editProjectType").value = production.projectType || "";
-    document.getElementById("editProjectStatus").value = production.status || "";
+    // Mostrar o modal ANTES de tentar preencher os campos
+    const modal = document.getElementById('editModal');
+    if (!modal) {
+        console.error('Modal de edição não encontrado no DOM');
+        showError('Erro: modal de edição não encontrado');
+        return;
+    }
     
-    // Preencher categorias
-    document.getElementById('editCategoryLuminotecnico').checked = production.categories?.luminotecnico || false;
-    document.getElementById('editCategoryEletrico').checked = production.categories?.eletrico || false;
-    document.getElementById('editCategoryPlanilhao').checked = production.categories?.planilhao || false;
-    document.getElementById('editCategoryCroqui').checked = production.categories?.croqui || false;
+    modal.classList.remove('hidden');
+    console.log('Modal exibido');
     
-    // Preencher pontos
-    document.getElementById('editRetrofit1').value = production.points?.retrofit1 || 0;
-    document.getElementById('editRetrofit2').value = production.points?.retrofit2 || 0;
-    document.getElementById('editRetrofit3').value = production.points?.retrofit3 || 0;
-    document.getElementById('editRetrofit4').value = production.points?.retrofit4 || 0;
-    document.getElementById('editRemodelagemV').value = production.points?.remodelagemV || 0;
-    document.getElementById('editRemodelagemD').value = production.points?.remodelagemD || 0;
-    
-    // Calcular total
-    calculateEditTotal();
-    
-    // Mostrar modal
-    document.getElementById('editModal').classList.remove('hidden');
+    // Aguardar um momento para garantir que o modal esteja visível antes de preencher
+    setTimeout(() => {
+        try {
+            // Debug dos elementos
+            debugEditModal();
+            
+            // Preencher o modal de edição
+            const editProjectDate = document.getElementById("editProjectDate");
+            const editPlaza = document.getElementById("editPlaza");
+            const editProjectType = document.getElementById("editProjectType");
+            const editProjectStatus = document.getElementById("editProjectStatus");
+            
+            if (editProjectDate) editProjectDate.value = production.date || "";
+            if (editPlaza) editPlaza.value = production.plaza || "";
+            if (editProjectType) editProjectType.value = production.projectType || "";
+            if (editProjectStatus) editProjectStatus.value = production.status || "em_andamento";
+            
+            // Preencher categorias
+            const editCategoryLuminotecnico = document.getElementById('editCategoryLuminotecnico');
+            const editCategoryEletrico = document.getElementById('editCategoryEletrico');
+            const editCategoryPlanilhao = document.getElementById('editCategoryPlanilhao');
+            const editCategoryCroqui = document.getElementById('editCategoryCroqui');
+            
+            if (editCategoryLuminotecnico) editCategoryLuminotecnico.checked = production.categories?.luminotecnico || false;
+            if (editCategoryEletrico) editCategoryEletrico.checked = production.categories?.eletrico || false;
+            if (editCategoryPlanilhao) editCategoryPlanilhao.checked = production.categories?.planilhao || false;
+            if (editCategoryCroqui) editCategoryCroqui.checked = production.categories?.croqui || false;
+            
+            // Preencher pontos
+            const editRetrofit1 = document.getElementById('editRetrofit1');
+            const editRetrofit2 = document.getElementById('editRetrofit2');
+            const editRetrofit3 = document.getElementById('editRetrofit3');
+            const editRetrofit4 = document.getElementById('editRetrofit4');
+            const editRemodelagemV = document.getElementById('editRemodelagemV');
+            const editRemodelagemD = document.getElementById('editRemodelagemD');
+            
+            if (editRetrofit1) editRetrofit1.value = production.points?.retrofit1 || 0;
+            if (editRetrofit2) editRetrofit2.value = production.points?.retrofit2 || 0;
+            if (editRetrofit3) editRetrofit3.value = production.points?.retrofit3 || 0;
+            if (editRetrofit4) editRetrofit4.value = production.points?.retrofit4 || 0;
+            if (editRemodelagemV) editRemodelagemV.value = production.points?.remodelagemV || 0;
+            if (editRemodelagemD) editRemodelagemD.value = production.points?.remodelagemD || 0;
+            
+            // Calcular total
+            calculateEditTotal();
+            
+            console.log('✅ Modal preenchido com sucesso');
+            
+        } catch (error) {
+            console.error('Erro ao preencher modal:', error);
+            showError('Erro ao carregar dados para edição');
+        }
+    }, 100);
 }
 
 // Função para calcular total no modal de edição
@@ -1212,7 +1296,7 @@ function calculateEditTotal() {
     
     fields.forEach(field => {
         const element = document.getElementById(field);
-        if (element) {
+        if (element && element.value) {
             const value = parseInt(element.value) || 0;
             total += value;
         }
@@ -1222,7 +1306,22 @@ function calculateEditTotal() {
     if (totalEl) {
         totalEl.textContent = total;
     }
+    
+    console.log('Total calculado no modal de edição:', total);
 }
+
+// ADICIONAR ESTA FUNÇÃO AO FINAL DO SEU ARQUIVO script-firebase.js
+// para verificar se o modal está sendo criado corretamente
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, verificando modal de edição...');
+    
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        console.log('✅ Modal de edição encontrado no DOM');
+    } else {
+        console.error('❌ Modal de edição não encontrado no DOM');
+    }
+});
 
 // Função para esconder modal de edição
 function hideEditModal() {
@@ -1249,28 +1348,67 @@ function hideEditModal() {
 
 // Função para atualizar produção
 async function updateProduction() {
+    console.log('=== INICIANDO ATUALIZAÇÃO DA PRODUÇÃO ===');
+    
     if (!currentEditId) {
+        console.error('currentEditId não encontrado:', currentEditId);
         showError('ID da produção não encontrado');
         return;
     }
     
     const production = allProductions.find(p => p.id === currentEditId);
     if (!production) {
+        console.error('Produção não encontrada para ID:', currentEditId);
         showError('Produção não encontrada');
         return;
     }
     
-    // Verificar permissões novamente
+    // Verificar permissões
     if (production.userId !== currentUser.uid && currentUserData.role !== 'admin') {
         showError('Você só pode editar suas próprias produções');
         return;
     }
     
+    // VERIFICAR SE TODOS OS ELEMENTOS EXISTEM ANTES DE PROSSEGUIR
+    const requiredElements = {
+        editProjectDate: document.getElementById('editProjectDate'),
+        editPlaza: document.getElementById('editPlaza'),
+        editProjectType: document.getElementById('editProjectType'),
+        editProjectStatus: document.getElementById('editProjectStatus'),
+        editCategoryLuminotecnico: document.getElementById('editCategoryLuminotecnico'),
+        editCategoryEletrico: document.getElementById('editCategoryEletrico'),
+        editCategoryPlanilhao: document.getElementById('editCategoryPlanilhao'),
+        editCategoryCroqui: document.getElementById('editCategoryCroqui'),
+        editRetrofit1: document.getElementById('editRetrofit1'),
+        editRetrofit2: document.getElementById('editRetrofit2'),
+        editRetrofit3: document.getElementById('editRetrofit3'),
+        editRetrofit4: document.getElementById('editRetrofit4'),
+        editRemodelagemV: document.getElementById('editRemodelagemV'),
+        editRemodelagemD: document.getElementById('editRemodelagemD'),
+        editTotalPoints: document.getElementById('editTotalPoints')
+    };
+    
+    // Verificar se algum elemento está faltando
+    const missingElements = [];
+    Object.entries(requiredElements).forEach(([key, element]) => {
+        if (!element) {
+            missingElements.push(key);
+        }
+    });
+    
+    if (missingElements.length > 0) {
+        console.error('Elementos faltando no DOM:', missingElements);
+        showError(`Erro no formulário: elementos não encontrados (${missingElements.join(', ')})`);
+        return;
+    }
+    
     // Validar campos obrigatórios
-    const date = document.getElementById('editProjectDate').value;
-    const plaza = document.getElementById('editPlaza').value.trim();
-    const projectType = document.getElementById('editProjectType').value.trim();
-    const status = document.getElementById('editProjectStatus').value;
+    const date = requiredElements.editProjectDate.value;
+    const plaza = requiredElements.editPlaza.value.trim();
+    const projectType = requiredElements.editProjectType.value.trim();
+    const status = requiredElements.editProjectStatus.value;
+    
+    console.log('Valores dos campos:', { date, plaza, projectType, status });
     
     if (!date || !plaza || !projectType || !status) {
         showError('Por favor, preencha todos os campos obrigatórios');
@@ -1279,11 +1417,13 @@ async function updateProduction() {
     
     // Validar se pelo menos uma categoria foi selecionada
     const categories = {
-        luminotecnico: document.getElementById('editCategoryLuminotecnico').checked,
-        eletrico: document.getElementById('editCategoryEletrico').checked,
-        planilhao: document.getElementById('editCategoryPlanilhao').checked,
-        croqui: document.getElementById('editCategoryCroqui').checked
+        luminotecnico: requiredElements.editCategoryLuminotecnico.checked,
+        eletrico: requiredElements.editCategoryEletrico.checked,
+        planilhao: requiredElements.editCategoryPlanilhao.checked,
+        croqui: requiredElements.editCategoryCroqui.checked
     };
+    
+    console.log('Categorias selecionadas:', categories);
     
     const hasCategory = Object.values(categories).some(cat => cat);
     if (!hasCategory) {
@@ -1291,30 +1431,59 @@ async function updateProduction() {
         return;
     }
     
+    // Verificar se todas as categorias obrigatórias estão selecionadas para finalização automática
+    const categoriasObrigatorias = ['luminotecnico', 'eletrico', 'planilhao'];
+    const todasObrigatoriasCompletas = categoriasObrigatorias.every(cat => categories[cat]);
+    
+    let statusFinal = status;
+    
+    // Se todas as categorias obrigatórias estão marcadas, finalizar automaticamente
+    if (todasObrigatoriasCompletas) {
+        statusFinal = 'finalizado';
+        console.log('🎉 Projeto será finalizado automaticamente - todas as categorias obrigatórias foram concluídas!');
+    }
+    
     try {
         showButtonLoading('updateBtn');
+        
+        // Coletar pontos
+        const points = {
+            retrofit1: parseInt(requiredElements.editRetrofit1.value) || 0,
+            retrofit2: parseInt(requiredElements.editRetrofit2.value) || 0,
+            retrofit3: parseInt(requiredElements.editRetrofit3.value) || 0,
+            retrofit4: parseInt(requiredElements.editRetrofit4.value) || 0,
+            remodelagemV: parseInt(requiredElements.editRemodelagemV.value) || 0,
+            remodelagemD: parseInt(requiredElements.editRemodelagemD.value) || 0
+        };
+        
+        const total = parseInt(requiredElements.editTotalPoints.textContent) || 0;
+        
+        console.log('Pontos coletados:', points, 'Total:', total);
         
         const updatedProduction = {
             date: date,
             plaza: plaza,
             projectType: projectType,
-            status: status,
+            status: statusFinal,
             categories: categories,
-            points: {
-                retrofit1: parseInt(document.getElementById('editRetrofit1').value) || 0,
-                retrofit2: parseInt(document.getElementById('editRetrofit2').value) || 0,
-                retrofit3: parseInt(document.getElementById('editRetrofit3').value) || 0,
-                retrofit4: parseInt(document.getElementById('editRetrofit4').value) || 0,
-                remodelagemV: parseInt(document.getElementById('editRemodelagemV').value) || 0,
-                remodelagemD: parseInt(document.getElementById('editRemodelagemD').value) || 0
-            },
-            total: parseInt(document.getElementById('editTotalPoints').textContent),
+            points: points,
+            total: total,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedBy: currentUser.uid
+            updatedBy: currentUser.uid,
+            // Adicionar campos de finalização automática se aplicável
+            ...(statusFinal === 'finalizado' && todasObrigatoriasCompletas && {
+                dataFinalizacao: new Date().toISOString(),
+                finalizadoAutomaticamente: true,
+                categoriasObrigatoriasCompletas: true
+            })
         };
+        
+        console.log('Dados a serem atualizados:', updatedProduction);
         
         // Atualizar no Firebase
         await db.collection(COLLECTIONS.PRODUCTIONS).doc(currentEditId).update(updatedProduction);
+        
+        console.log('✅ Produção atualizada no Firebase com sucesso');
         
         // Recarregar dados
         await loadAllData();
@@ -1322,11 +1491,17 @@ async function updateProduction() {
         loadUserHistory();
         
         hideEditModal();
-        showSuccess('✅ Produção atualizada com sucesso!');
+        
+        // Mostrar notificação especial se o projeto foi finalizado automaticamente
+        if (statusFinal === 'finalizado' && todasObrigatoriasCompletas) {
+            showSuccess('🎉 PROJETO FINALIZADO AUTOMATICAMENTE!\n\nTodas as categorias obrigatórias foram concluídas:\n✅ Luminotécnico\n✅ Elétrico\n✅ Planilhão\n\nO projeto foi automaticamente marcado como finalizado!');
+        } else {
+            showSuccess('✅ Produção atualizada com sucesso!');
+        }
         
     } catch (error) {
         console.error('Erro ao atualizar produção:', error);
-        showError('Erro ao atualizar produção. Tente novamente.');
+        showError(`Erro ao atualizar produção: ${error.message}`);
     } finally {
         hideButtonLoading('updateBtn');
     }
@@ -1718,6 +1893,8 @@ if (document.readyState === 'loading') {
 } else {
     setupEditModalEvents();
 }
+
+console.log('🔧 Funções de edição corrigidas carregadas!');
 
 // Configurações globais do Chart.js
 Chart.defaults.responsive = true;

@@ -1175,11 +1175,14 @@ function editProduction(productionId) {
     
     currentEditId = productionId;
     
+    // Mostrar o modal de edição
+    document.getElementById("editModal").classList.remove("hidden");
+
     // Preencher o modal de edição
-    document.getElementById('editProjectDate').value = production.date || '';
-    document.getElementById('editPlaza').value = production.plaza || '';
-    document.getElementById('editProjectType').value = production.projectType || '';
-    document.getElementById('editProjectStatus').value = production.status || '';
+    document.getElementById("editProjectDate").value = production.date || "";
+    document.getElementById("editPlaza").value = production.plaza || "";
+    document.getElementById("editProjectType").value = production.projectType || "";
+    document.getElementById("editProjectStatus").value = production.status || "";
     
     // Preencher categorias
     document.getElementById('editCategoryLuminotecnico').checked = production.categories?.luminotecnico || false;

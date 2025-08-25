@@ -1,6 +1,18 @@
 // 🔥 Sistema de Produtividade com Firebase
 // Inicialização da aplicação
 
+// Importar funções do gerenciador de projetos
+if (typeof window !== 'undefined' && window.ProjetoManager) {
+    const { 
+        podeFinalizarProjeto, 
+        finalizarProjeto, 
+        calcularProgressoProjeto, 
+        atualizarCategoriaProjeto, 
+        gerarRelatorioStatusProjetos, 
+        GerenciadorProjetoFirebase 
+    } = window.ProjetoManager;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
@@ -414,6 +426,18 @@ async function handleProductionSubmit(e) {
         return;
     }
     
+    // Verificar se todas as categorias obrigatórias estão selecionadas para finalização automática
+    const categoriasObrigatorias = ['luminotecnico', 'eletrico', 'planilhao'];
+    const todasObrigatoriasCompletas = categoriasObrigatorias.every(cat => categories[cat]);
+    
+    let statusProjeto = projectStatusEl?.value || 'em_andamento';
+    
+    // Se todas as categorias obrigatórias estão marcadas, finalizar automaticamente
+    if (todasObrigatoriasCompletas) {
+        statusProjeto = 'finalizado';
+        console.log('🎉 Projeto será finalizado automaticamente - todas as categorias obrigatórias foram concluídas!');
+    }
+    
     try {
         showButtonLoading('saveBtn');
         
@@ -438,7 +462,7 @@ async function handleProductionSubmit(e) {
             date: projectDateEl.value || new Date().toISOString().split('T')[0], // usar data atual como fallback
             plaza: plazaEl?.value || 'N/A',
             projectType: projectTypeEl?.value || 'N/A',
-            status: projectStatusEl?.value || 'Em andamento',
+            status: statusProjeto, // Usar o status calculado (pode ser 'finalizado' automaticamente)
             categories: categories,
             points: {
                 retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
@@ -449,7 +473,13 @@ async function handleProductionSubmit(e) {
                 remodelagemD: parseInt(document.getElementById('remodelagemD')?.value) || 0
             },
             total: parseInt(document.getElementById('totalPoints')?.textContent) || 0,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            // Adicionar campos de finalização automática se aplicável
+            ...(statusProjeto === 'finalizado' && {
+                dataFinalizacao: new Date().toISOString(),
+                finalizadoAutomaticamente: true,
+                categoriasObrigatoriasCompletas: todasObrigatoriasCompletas
+            })
         };
         
         console.log('Dados a serem salvos:', production); // Log para debug
@@ -471,7 +501,12 @@ async function handleProductionSubmit(e) {
         updateDashboard();
         loadUserHistory();
         
-        showSuccess('✅ Produção salva com sucesso!');
+        // Mostrar notificação especial se o projeto foi finalizado automaticamente
+        if (statusProjeto === 'finalizado' && todasObrigatoriasCompletas) {
+            showSuccess('🎉 PROJETO FINALIZADO AUTOMATICAMENTE!\n\nTodas as categorias obrigatórias foram concluídas:\n✅ Luminotécnico\n✅ Elétrico\n✅ Planilhão\n\nO projeto foi automaticamente marcado como finalizado!');
+        } else {
+            showSuccess('✅ Produção salva com sucesso!');
+        }
         
     } catch (error) {
         console.error('Erro ao salvar produção:', error);

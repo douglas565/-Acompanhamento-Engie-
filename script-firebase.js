@@ -788,6 +788,18 @@ function updateTeamChart() {
                             }
                         }
                     },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 16
+                        },
+                        formatter: function(value, context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return percentage + '%';
+                        }
+                    },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         titleColor: '#fff',
@@ -803,7 +815,8 @@ function updateTeamChart() {
                         }
                     }
                 }
-            }
+            },
+            plugins: [ChartDataLabels]
         });
         console.log('Gráfico de equipes criado com sucesso');
     } catch (error) {
@@ -1032,6 +1045,18 @@ function updateProjectTypeChart() {
                             }
                         }
                     },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        formatter: function(value, context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return percentage + '%';
+                        }
+                    },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         titleColor: '#fff',
@@ -1046,7 +1071,8 @@ function updateProjectTypeChart() {
                         }
                     }
                 }
-            }
+            },
+            plugins: [ChartDataLabels]
         });
         console.log('Gráfico de tipos de projeto criado com sucesso');
     } catch (error) {

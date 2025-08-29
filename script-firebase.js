@@ -1493,7 +1493,7 @@ async function updateProduction() {
             status: statusFinal,
             categories: categories,
             points: points,
-            total: total,
+            total: Object.values(points).reduce((sum, val) => sum + val, 0),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid,
             // Adicionar campos de finalização automática se aplicável

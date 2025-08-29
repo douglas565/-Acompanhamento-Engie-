@@ -472,7 +472,7 @@ async function handleProductionSubmit(e) {
                 remodelagemV: parseInt(document.getElementById('remodelagemV')?.value) || 0,
                 remodelagemD: parseInt(document.getElementById('remodelagemD')?.value) || 0
             },
-            total: parseInt(document.getElementById('totalPoints')?.textContent) || 0,
+            total: Object.values(production.points).reduce((sum, val) => sum + val, 0),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             // Adicionar campos de finalização automática se aplicável
             ...(statusProjeto === 'finalizado' && {

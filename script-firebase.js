@@ -723,6 +723,15 @@ function setupChartResize() {
 // Função corrigida para gráfico de equipes
 function updateTeamChart() {
     const ctx = document.getElementById('teamChart');
+    const teamChartCard = ctx ? ctx.closest('.chart-card') : null;
+
+    if (!currentUserData || currentUserData.role !== 'admin') {
+        if (teamChartCard) teamChartCard.style.display = 'none';
+        return; // Sai da função sem renderizar nada
+    } else {
+        if (teamChartCard) teamChartCard.style.display = ''; // Mostra se for admin
+    }
+    
     if (!ctx) {
         console.warn('Canvas teamChart não encontrado');
         return;

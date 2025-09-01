@@ -301,6 +301,11 @@ body {
     display: block;
 }
 
+/* Esconde cards de gráfico quando não usados */
+.chart-card[style*="display: none"] {
+    display: none !important;
+}
+
 /* Wrapper para controlar melhor o tamanho dos gráficos */
 .chart-wrapper {
     position: relative;
@@ -977,4 +982,33 @@ body {
     to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
+/* Layout flexível para os gráficos */
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+}
+
+/* Cada gráfico ocupa até 45% da largura (lado a lado) */
+.chart-card {
+    flex: 1 1 45%;
+    max-width: 45%;
+    min-width: 300px;
+}
+
+/* Tipos de Projeto ocupa mais largura e centralizado */
+.chart-card:nth-child(3) {
+    flex: 1 1 60%;
+    max-width: 60%;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    .chart-card {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
 

@@ -897,6 +897,21 @@ function updateMonthlyChart() {
                     intersect: false,
                     mode: "index"
                 },
+
+                onClick: (evt, elements) => {
+                    if (currentUserData && currentUserData.role !== "admin") {
+                        // Se não for admin, não faz nada
+                        showError("Apenas administradores podem visualizar detalhes da semana");
+                        return;
+                    }
+                    if (elements.length > 0) {
+                        const chart = elements[0];
+                        const weekKey = weeks[chart.index];
+                        showWeeklyDetails(weekKey);
+                    }
+                },
+                
+
                 plugins: {
                     legend: {
                         display: false
@@ -1093,21 +1108,7 @@ function updateProjectTypeChart() {
                                 size: 12
                             }
                         }
-                    },
-                    
-                    onClick: (evt, elements) => {
-                        if (currentUserData && currentUserData.role !== "admin") {
-                            // Se não for admin, não faz nada
-                            showError("Apenas administradores podem visualizar detalhes da semana");
-                            return;
-                        }
-                        if (elements.length > 0) {
-                            const chart = elements[0];
-                            const weekKey = weeks[chart.index];
-                            showWeeklyDetails(weekKey);
-                        }
-                    },
-                               
+                    },      
         
                     datalabels: {
                         color: '#fff',

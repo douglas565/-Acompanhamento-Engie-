@@ -795,10 +795,12 @@ function updateTeamChart() {
                             size: 16
                         },
                         formatter: function(value, context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return percentage + '%';
-                        }
+                            return value; // Mostrar valores reais ao invés de porcentagens
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0,
+                        clamp: true
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
@@ -1052,10 +1054,12 @@ function updateProjectTypeChart() {
                             size: 14
                         },
                         formatter: function(value, context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return percentage + '%';
-                        }
+                            return value; // Mostrar valores reais ao invés de porcentagens
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 0,
+                        clamp: true
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',

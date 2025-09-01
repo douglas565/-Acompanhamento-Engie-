@@ -412,20 +412,19 @@ async function handleProductionSubmit(e) {
         return;
     }
     
-    // CORREÇÃO: Declarar todas as variáveis no início
+    // Declarar elementos do formulário
     const projectDateEl = document.getElementById('projectDate');
     const plazaEl = document.getElementById('plaza');
     const projectTypeEl = document.getElementById('projectType');
-    const projectStatusEl = document.getElementById('projectStatus'); // MOVIDO PARA CIMA
+    const projectStatusEl = document.getElementById('projectStatus');
     
-    // Verificar se os elementos existem antes de acessar suas propriedades
     if (!projectDateEl) {
         console.error('Elemento projectDate não encontrado');
         showError('Erro: campo de data não encontrado no formulário');
         return;
     }
     
-    // Validar se pelo menos uma categoria foi selecionada
+    // Categorias
     const categories = {
         luminotecnico: document.getElementById('categoryLuminotecnico')?.checked || false,
         eletrico: document.getElementById('categoryEletrico')?.checked || false,
@@ -439,18 +438,27 @@ async function handleProductionSubmit(e) {
         return;
     }
     
-    // Verificar se todas as categorias obrigatórias estão selecionadas para finalização automática
     const categoriasObrigatorias = ['luminotecnico', 'eletrico', 'planilhao'];
     const todasObrigatoriasCompletas = categoriasObrigatorias.every(cat => categories[cat]);
     
     let statusProjeto = projectStatusEl?.value || 'em_andamento';
-    
-    // Se todas as categorias obrigatórias estão marcadas, finalizar automaticamente
     if (todasObrigatoriasCompletas) {
         statusProjeto = 'finalizado';
         console.log('🎉 Projeto será finalizado automaticamente - todas as categorias obrigatórias foram concluídas!');
     }
-    
+
+    // ✅ Definir pontos e total antes do objeto production
+    const points = {
+        retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
+        retrofit2: parseInt(document.getElementById('retrofit2')?.value) || 0,
+        retrofit3: parseInt(document.getElementById('retrofit3')?.value) || 0,
+        retrofit4: parseInt(document.getElementById('retrofit4')?.value) || 0,
+        remodelagemV: parseInt(document.getElementById('remodelagemV')?.value) || 0,
+        remodelagemD: parseInt(document.getElementById('remodelagemD')?.value) || 0
+    };
+
+    const total = Object.values(points).reduce((sum, val) => sum + val, 0);
+
     try {
         showButtonLoading('saveBtn');
         
@@ -464,17 +472,9 @@ async function handleProductionSubmit(e) {
             projectType: projectTypeEl?.value || 'N/A',
             status: statusProjeto,
             categories: categories,
-            points: {
-                retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
-                retrofit2: parseInt(document.getElementById('retrofit2')?.value) || 0,
-                retrofit3: parseInt(document.getElementById('retrofit3')?.value) || 0,
-                retrofit4: parseInt(document.getElementById('retrofit4')?.value) || 0,
-                remodelagemV: parseInt(document.getElementById('remodelagemV')?.value) || 0,
-                remodelagemD: parseInt(document.getElementById('remodelagemD')?.value) || 0
-            },
-            total: Object.values(production.points).reduce((sum, val) => sum + val, 0),
+            points: points,
+            total: total,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            // Adicionar campos de finalização automática se aplicável
             ...(statusProjeto === 'finalizado' && {
                 dataFinalizacao: new Date().toISOString(),
                 finalizadoAutomaticamente: todasObrigatoriasCompletas,
@@ -490,7 +490,7 @@ async function handleProductionSubmit(e) {
         // Atualizar dados locais
         await loadAllData();
         
-        // Reset form
+        // Resetar formulário
         const form = document.getElementById('productionForm');
         if (form) {
             form.reset();
@@ -501,7 +501,6 @@ async function handleProductionSubmit(e) {
         updateDashboard();
         loadUserHistory();
         
-        // Mostrar notificação especial se o projeto foi finalizado automaticamente
         if (statusProjeto === 'finalizado' && todasObrigatoriasCompletas) {
             showSuccess('🎉 PROJETO FINALIZADO AUTOMATICAMENTE!\n\nTodas as categorias obrigatórias foram concluídas:\n✅ Luminotécnico\n✅ Elétrico\n✅ Planilhão\n\nO projeto foi automaticamente marcado como finalizado!');
         } else {
@@ -515,6 +514,7 @@ async function handleProductionSubmit(e) {
         hideButtonLoading('saveBtn');
     }
 }
+
 
 // FUNÇÃO ADICIONAL PARA VERIFICAR SE TODOS OS ELEMENTOS EXISTEM
 function debugFormElements() {

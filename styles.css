@@ -482,16 +482,25 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 10px;
     z-index: 1000;
     backdrop-filter: blur(5px);
 }
 
+/* Ajustar o tamanho e layout do modal */
 .modal-content {
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    margin: 20px;
+    max-width: 90vw;       /* nunca ultrapassar 90% da largura da tela */
+    width: 100%;
+    max-height: 90vh;      /* altura máxima da tela */
+    overflow-y: auto;      /* rolagem vertical se passar da altura */
+    word-wrap: break-word; /* quebra de palavras longas */
+    white-space: normal;   /* quebra linhas automaticamente */
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
+
 
 .modal-buttons {
     display: flex;
@@ -621,11 +630,7 @@ body {
         flex-direction: column;
         gap: 10px;
     }
-    
-    .modal-content {
-        margin: 10px;
-        max-height: 95vh;
-    }
+
     
     .total-points {
         font-size: 1.8em;
@@ -911,3 +916,65 @@ body {
     background: linear-gradient(135deg, #fcb69f 0%, #ffecd2 100%);
     box-shadow: 0 8px 25px rgba(252, 182, 159, 0.3);
 }
+
+/* Estilos para o Modal de Detalhes Semanais */
+#weeklyDetails {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    z-index: 1001;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2em;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+.modal-body p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #555;
+}
+
+.modal-body strong {
+    color: #007bff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+

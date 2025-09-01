@@ -980,30 +980,38 @@ function showWeeklyDetails(weekKey) {
         return;
     }
 
-    // Agrupar por usuário
+    // Agrupar por usuário e calcular apenas os totais
     const groupedByUser = {};
     weeklyProductions.forEach(p => {
         const user = p.userName || p.userEmail;
-        if (!groupedByUser[user]) groupedByUser[user] = [];
-        groupedByUser[user].push(p);
+        if (!groupedByUser[user]) {
+            groupedByUser[user] = 0;
+        }
+        groupedByUser[user] += p.total;
     });
 
-    // Criar conteúdo HTML
-    let detailsHtml = `<h3>Produções da semana ${start.toLocaleDateString("pt-BR")} - ${end.toLocaleDateString("pt-BR")}</h3>`;
-    Object.entries(groupedByUser).forEach(([user, prods]) => {
-        const totalUser = prods.reduce((sum, p) => sum + p.total, 0);
-        detailsHtml += `<h4>👤 ${user} – ${totalUser} pontos</h4><ul>`;
-        prods.forEach(p => {
-            detailsHtml += `<li>${p.date}: ${p.plaza} – ${p.projectType} (Total: ${p.total})</li>`;
-        });
-        detailsHtml += `</ul>`;
-    });
+    let detailsHtml = `
+        <div class="modal-header">
+            <h3>Produções da semana ${start.toLocaleDateString("pt-BR")} - ${end.toLocaleDateString("pt-BR")}</h3>
+            <button class="close-button" onclick="document.getElementById('weeklyDetails').classList.add('hidden')">&times;</button>
+        </div>
+        <div class="modal-body">
+    `;
+    
+    // Mostrar apenas nome do usuário e total de pontos
+    for (const user in groupedByUser) {
+        const userTotalPoints = groupedByUser[user];
+        detailsHtml += `<p><strong>${user}: ${userTotalPoints} pontos</strong></p>`;
+    }
+    
+    detailsHtml += `</div>`;
 
     // Mostrar em modal ou div
     const detailsDiv = document.getElementById("weeklyDetails");
     if (detailsDiv) {
         detailsDiv.innerHTML = detailsHtml;
         detailsDiv.classList.remove("hidden");
+        detailsDiv.style.display = "block"; // Garante que o modal seja exibido como bloco
     } else {
         alert(detailsHtml.replace(/<[^>]+>/g, ""));
     }

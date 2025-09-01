@@ -948,6 +948,53 @@ function updateMonthlyChart() {
     }
 }
 
+function showWeeklyDetails(weekKey) {
+    // Calcular início e fim da semana
+    const start = new Date(weekKey + "T00:00:00");
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    // Filtrar produções daquela semana
+    const weeklyProductions = allProductions.filter(p => {
+        const date = new Date(p.date + "T00:00:00");
+        return date >= start && date <= end;
+    });
+
+    if (weeklyProductions.length === 0) {
+        alert("Nenhuma produção encontrada para esta semana.");
+        return;
+    }
+
+    // Agrupar por usuário
+    const groupedByUser = {};
+    weeklyProductions.forEach(p => {
+        const user = p.userName || p.userEmail;
+        if (!groupedByUser[user]) groupedByUser[user] = [];
+        groupedByUser[user].push(p);
+    });
+
+    // Criar conteúdo HTML
+    let detailsHtml = `<h3>Produções da semana ${start.toLocaleDateString("pt-BR")} - ${end.toLocaleDateString("pt-BR")}</h3>`;
+    Object.entries(groupedByUser).forEach(([user, prods]) => {
+        const totalUser = prods.reduce((sum, p) => sum + p.total, 0);
+        detailsHtml += `<h4>👤 ${user} – ${totalUser} pontos</h4><ul>`;
+        prods.forEach(p => {
+            detailsHtml += `<li>${p.date}: ${p.plaza} – ${p.projectType} (Total: ${p.total})</li>`;
+        });
+        detailsHtml += `</ul>`;
+    });
+
+    // Mostrar em modal ou div
+    const detailsDiv = document.getElementById("weeklyDetails");
+    if (detailsDiv) {
+        detailsDiv.innerHTML = detailsHtml;
+        detailsDiv.classList.remove("hidden");
+    } else {
+        alert(detailsHtml.replace(/<[^>]+>/g, ""));
+    }
+}
+
+
 // Função corrigida para gráfico de tipos de projeto
 function updateProjectTypeChart() {
     const ctx = document.getElementById('projectTypeChart');
@@ -1047,6 +1094,21 @@ function updateProjectTypeChart() {
                             }
                         }
                     },
+                    
+                    onClick: (evt, elements) => {
+                        if (currentUserData && currentUserData.role !== "admin") {
+                            // Se não for admin, não faz nada
+                            showError("Apenas administradores podem visualizar detalhes da semana");
+                            return;
+                        }
+                        if (elements.length > 0) {
+                            const chart = elements[0];
+                            const weekKey = weeks[chart.index];
+                            showWeeklyDetails(weekKey);
+                        }
+                    },
+                               
+        
                     datalabels: {
                         color: '#fff',
                         font: {

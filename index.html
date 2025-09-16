@@ -6,20 +6,17 @@
     <title>Sistema de Produtividade - Equipe de Projetos</title>
     <link rel="stylesheet" href="styles.css">
     
-    <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     
     <script src="projeto-manager.js"></script>
 
-    <!-- Other Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="spinner"></div>
@@ -29,7 +26,6 @@
     </div>
 
     <div class="container">
-        <!-- Tela de Login -->
         <div id="loginScreen" class="card login-card hidden">
             <div class="header">
                 <h1>Sistema de Produtividade</h1>
@@ -72,7 +68,6 @@
             </div>
         </div>
         
-        <!-- Tela Principal -->
         <div id="mainScreen" class="hidden">
             <div class="user-info">
                 <div>
@@ -83,23 +78,25 @@
                 <button class="btn btn-logout" onclick="logoutUser()">Sair</button>
             </div>
             
-            <!-- Painel Admin -->
             <div id="adminPanel" class="admin-panel hidden">
                 <h3>📊 Painel Administrativo</h3>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
                     <button class="btn btn-success" onclick="exportToExcel()">📥 Exportar Excel</button>
                     <button class="btn btn-secondary" onclick="showUserManagement()">👥 Gerenciar Usuários</button>
                     <button class="btn" onclick="syncData()">🔄 Sincronizar Dados</button>
                 </div>
+
+                <div id="duplicateProjectsWarning" class="hidden" style="margin-top: 20px;">
+                    <h4>⚠️ Alerta de Projetos Duplicados</h4>
+                    <div id="duplicateProjectsList"></div>
+                </div>
             </div>
             
-            <!-- Status de Conexão -->
             <div id="connectionStatus" class="connection-status">
                 <span id="connectionIcon">🟢</span>
                 <span id="connectionText">Conectado ao Firebase</span>
             </div>
             
-            <!-- Estatísticas Gerais -->
             <div class="card">
                 <h3>📈 Estatísticas Gerais</h3>
                 <div class="stats-grid">
@@ -122,7 +119,6 @@
                 </div>
             </div>
             
-            <!-- Formulário de Produção -->
             <div class="card">
                 <h3>📝 Registrar Produção Diária</h3>
                 
@@ -207,31 +203,35 @@
                 </form>
             </div>
             
-            <!-- Gráficos - ESTRUTURA CORRIGIDA SEM RANKING -->
             <div class="charts-container">
                 <div class="chart-card">
                     <h3>📊 Produção por Equipe</h3>
                     <div class="chart-wrapper">
-                        <canvas id="teamChart" width="400" height="320"></canvas>
+                        <canvas id="teamChart"></canvas>
                     </div>
                 </div>
                 <div class="chart-card">
                     <h3>📈 Produção Semanal</h3>
                     <div class="chart-wrapper">
-                        <canvas id="monthlyChart" width="400" height="320"></canvas>
+                        <canvas id="monthlyChart"></canvas>
                     </div>
                     <div id="weeklyDetails" class="hidden" style="background: #fff; padding: 20px; border-radius: 8px;  box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-top: 20px;"></div>
-
                 </div>
                 <div class="chart-card">
                     <h3>📋 Tipos de Projeto </h3>
                     <div class="chart-wrapper">
-                        <canvas id="projectTypeChart" width="600" height="320"></canvas>
+                        <canvas id="projectTypeChart"></canvas>
                     </div>
+                </div>
+                <div id="finishedProjectsChartCard" class="chart-card hidden">
+                    <h3>✅ Projetos Finalizados por Projetista</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="finishedProjectsChart"></canvas>
+                    </div>
+                    <div id="finishedProjectsDetails" class="hidden" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-top: 20px;"></div>
                 </div>
             </div>
             
-            <!-- Histórico de Produção -->
             <div class="card">
                 <h3>📋 Meu Histórico de Produção</h3>
                 <div class="form-group">
@@ -246,7 +246,6 @@
             </div>
         </div>
         
-                <!-- Modal de Edição de Produção -->
         <div id="editModal" class="modal-overlay hidden">
             <div class="modal-content card">
                 <h3>✏️ Editar Produção</h3>
@@ -339,7 +338,6 @@
             </div>
         </div>
 
-        <!-- Modal de Gerenciamento de Usuários -->
         <div id="userModal" class="modal-overlay hidden">
             <div class="modal-content card">
                 <h3>👥 Gerenciamento de Usuários</h3>

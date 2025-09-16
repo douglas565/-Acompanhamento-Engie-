@@ -74,8 +74,16 @@ function showMainScreen() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     
+    // Controla a visibilidade do painel de admin e do gráfico de admin
+    const adminPanel = document.getElementById('adminPanel');
+    const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
+
     if (currentUserData && currentUserData.role === 'admin') {
-        document.getElementById('adminPanel').classList.remove('hidden');
+        adminPanel.classList.remove('hidden');
+        finishedProjectsChartCard.classList.remove('hidden');
+    } else {
+        adminPanel.classList.add('hidden');
+        finishedProjectsChartCard.classList.add('hidden');
     }
     
     // Aguardar um momento para os elementos DOM estarem prontos
@@ -155,6 +163,10 @@ async function logoutUser() {
         // Limpar gráficos de forma segura
         clearAllCharts();
         
+        // Ocultar elementos de admin ao sair
+        document.getElementById('adminPanel').classList.add('hidden');
+        document.getElementById('finishedProjectsChartCard').classList.add('hidden');
+
         // Limpar formulários
         document.getElementById('loginEmail').value = '';
         document.getElementById('loginPassword').value = '';
@@ -166,7 +178,6 @@ async function logoutUser() {
         showError('Erro ao fazer logout');
     }
 }
-
 // Carregar dados do usuário
 async function loadUserData(uid) {
     try {
@@ -238,19 +249,21 @@ if (allProductions.length === 0) {
             date: '2025-08-15',
             plaza: 'Praça Teste 1',
             projectType: 'Projeto Demo 1',
+            status: 'finalizado',
             points: { retrofit1: 10, retrofit2: 5, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 0 },
             total: 15,
             createdAt: new Date('2025-08-15T10:00:00Z')
         },
         {
             id: 'demo2',
-            userId: currentUser.uid,
-            userEmail: currentUserData.email,
-            userName: currentUserData.name,
+            userId: 'other_user_id',
+            userEmail: 'joao@sistema.com',
+            userName: 'João',
             team: 'Florianópolis',
             date: '2025-08-16',
-            plaza: 'Praça Teste 2',
+            plaza: 'Praça Teste 1', // DUPLICADO
             projectType: 'Projeto Demo 2',
+            status: 'em_andamento',
             points: { retrofit1: 0, retrofit2: 0, retrofit3: 8, retrofit4: 7, remodelagemV: 0, remodelagemD: 0 },
             total: 15,
             createdAt: new Date('2025-08-16T11:00:00Z')
@@ -264,19 +277,21 @@ if (allProductions.length === 0) {
             date: '2025-08-17',
             plaza: 'Praça Teste 3',
             projectType: 'Projeto Demo 3',
+            status: 'em_andamento',
             points: { retrofit1: 12, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 5, remodelagemD: 0 },
             total: 17,
             createdAt: new Date('2025-08-17T12:00:00Z')
         },
         {
             id: 'demo4',
-            userId: currentUser.uid,
-            userEmail: currentUserData.email,
-            userName: currentUserData.name,
+            userId: 'other_user_id',
+            userEmail: 'joao@sistema.com',
+            userName: 'João',
             team: 'Florianópolis',
             date: '2025-08-18',
             plaza: 'Praça Teste 4',
             projectType: 'Projeto Demo 4',
+            status: 'finalizado',
             points: { retrofit1: 0, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 10 },
             total: 10,
             createdAt: new Date('2025-08-18T13:00:00Z')
@@ -588,6 +603,9 @@ function showSuccess(message) {
 function updateDashboard() {
     updateStats();
     updateCharts();
+    if (currentUserData.role === 'admin') {
+        checkForDuplicateProjects();
+    }
 }
 
 function updateStats() {
@@ -674,6 +692,15 @@ function updateCharts() {
             updateProjectTypeChart();
         } catch (error) {
             console.error('Erro ao atualizar gráfico de tipos de projeto:', error);
+        }
+
+        // Novo gráfico para admins
+        if (currentUserData && currentUserData.role === 'admin') {
+            try {
+                updateFinishedProjectsChart();
+            } catch (error) {
+                console.error('Erro ao atualizar gráfico de projetos finalizados:', error);
+            }
         }
     }, 100);
 }
@@ -1163,6 +1190,168 @@ function updateProjectTypeChart() {
         console.error('Erro ao criar gráfico de tipos de projeto:', error);
     }
 }
+
+// NOVA FUNÇÃO PARA GRÁFICO DE PROJETOS FINALIZADOS (ADMIN)
+function updateFinishedProjectsChart() {
+    const ctx = document.getElementById('finishedProjectsChart');
+    if (!ctx) {
+        console.warn('Canvas finishedProjectsChart não encontrado');
+        return;
+    }
+
+    if (charts.finishedProjects) {
+        charts.finishedProjects.destroy();
+        charts.finishedProjects = null;
+    }
+
+    const finishedProductions = allProductions.filter(p => p.status === 'finalizado');
+    
+    const projectsByUser = {};
+    finishedProductions.forEach(p => {
+        const userName = p.userName || p.userEmail;
+        if (!projectsByUser[userName]) {
+            projectsByUser[userName] = [];
+        }
+        projectsByUser[userName].push(p);
+    });
+
+    const users = Object.keys(projectsByUser);
+    const projectCounts = users.map(user => projectsByUser[user].length);
+
+    if (users.length === 0) {
+        const context = ctx.getContext('2d');
+        context.clearRect(0, 0, ctx.width, ctx.height);
+        context.font = '16px Arial';
+        context.fillStyle = '#666';
+        context.textAlign = 'center';
+        context.fillText('Nenhum projeto finalizado ainda', ctx.width / 2, ctx.height / 2);
+        return;
+    }
+
+    try {
+        charts.finishedProjects = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: users,
+                datasets: [{
+                    label: 'Projetos Finalizados',
+                    data: projectCounts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const user = users[index];
+                        showFinishedProjectsDetails(user, projectsByUser[user]);
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Projetos: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Erro ao criar gráfico de projetos finalizados:", error);
+    }
+}
+
+function showFinishedProjectsDetails(user, projects) {
+    const detailsDiv = document.getElementById('finishedProjectsDetails');
+    if (!detailsDiv) return;
+
+    let detailsHtml = `
+        <div class="modal-header">
+            <h3>Projetos Finalizados por ${user}</h3>
+            <button class="close-button" onclick="document.getElementById('finishedProjectsDetails').classList.add('hidden')">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 300px; overflow-y: auto;">
+            <ul>
+    `;
+
+    projects.forEach(p => {
+        const date = new Date(p.date + 'T00:00:00').toLocaleDateString('pt-BR');
+        detailsHtml += `<li><strong>${date}:</strong> ${p.plaza || 'N/A'} - ${p.projectType || 'N/A'} (${p.total} pontos)</li>`;
+    });
+
+    detailsHtml += `</ul></div>`;
+    
+    detailsDiv.innerHTML = detailsHtml;
+    detailsDiv.classList.remove('hidden');
+}
+
+// NOVA FUNÇÃO PARA VERIFICAR PROJETOS DUPLICADOS
+function checkForDuplicateProjects() {
+    const warningContainer = document.getElementById('duplicateProjectsWarning');
+    const listDiv = document.getElementById('duplicateProjectsList');
+
+    if (!warningContainer || !listDiv) return;
+
+    const productionsByPlaza = {};
+
+    // Agrupar produções por praça e por usuário
+    allProductions.forEach(p => {
+        if (p.plaza) {
+            const plazaName = p.plaza.trim().toLowerCase();
+            if (!productionsByPlaza[plazaName]) {
+                productionsByPlaza[plazaName] = {};
+            }
+            const userName = p.userName || p.userEmail;
+            if (!productionsByPlaza[plazaName][userName]) {
+                productionsByPlaza[plazaName][userName] = [];
+            }
+            productionsByPlaza[plazaName][userName].push(p);
+        }
+    });
+
+    let duplicatesHtml = '';
+    let hasDuplicates = false;
+
+    // Verificar quais praças têm mais de um usuário
+    for (const plaza in productionsByPlaza) {
+        const users = Object.keys(productionsByPlaza[plaza]);
+        if (users.length > 1) {
+            hasDuplicates = true;
+            duplicatesHtml += `
+                <div class="duplicate-item">
+                    <strong>Praça: ${allProductions.find(p => p.plaza.trim().toLowerCase() === plaza).plaza}</strong>
+                    <br>
+                    <span>Encontrado nos registros de: ${users.join(', ')}</span>
+                </div>
+            `;
+        }
+    }
+
+    if (hasDuplicates) {
+        listDiv.innerHTML = duplicatesHtml;
+        warningContainer.classList.remove('hidden');
+    } else {
+        listDiv.innerHTML = '';
+        warningContainer.classList.add('hidden');
+    }
+}
+
 
 // Carregar histórico do usuário
 function loadUserHistory() {

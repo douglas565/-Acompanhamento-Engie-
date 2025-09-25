@@ -129,6 +129,11 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="projectNumber">Número do Projeto:</label>
+                        <input type="text" id="projectNumber" placeholder="Ex: 2025-00123" required>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="plaza">Praças:</label>
                         <input type="text" id="plaza" placeholder="Ex: Praça Elias Abdo Bittar" required>
                     </div>
@@ -224,7 +229,7 @@
                     </div>
                 </div>
                 <div id="finishedProjectsChartCard" class="chart-card hidden">
-                    <h3>✅ Projetos Finalizados por Projetista</h3>
+                    <h3>✅ Projetos Finalizados por Projetista (Semanal)</h3>
                     <div class="chart-wrapper">
                         <canvas id="finishedProjectsChart"></canvas>
                     </div>
@@ -235,7 +240,7 @@
             <div class="card">
                 <h3>📋 Meu Histórico de Produção</h3>
                 <div class="form-group">
-                    <input type="text" id="historySearch" placeholder="🔍 Buscar por praça, projeto ou data..." onkeyup="filterHistory()" style="margin-bottom: 15px;">
+                    <input type="text" id="historySearch" placeholder="🔍 Buscar por praça, nº do projeto ou data..." onkeyup="filterHistory()" style="margin-bottom: 15px;">
                 </div>
                 <div id="productionHistory" class="production-list">
                     <div class="loading-placeholder">
@@ -253,6 +258,11 @@
                 <div class="form-group">
                     <label for="editProjectDate">Data:</label>
                     <input type="date" id="editProjectDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectNumber">Número do Projeto:</label>
+                    <input type="text" id="editProjectNumber" placeholder="Ex: 2025-00123" required>
                 </div>
                 
                 <div class="form-group">

@@ -483,6 +483,7 @@ async function handleProductionSubmit(e) {
             userName: currentUserData.name || currentUserData.email.split('@')[0],
             team: currentUserData.team,
             date: projectDateEl.value || new Date().toISOString().split('T')[0],
+            projectNumber: document.getElementById('projectNumber')?.value.trim() || 'N/A',
             plaza: plazaEl?.value || 'N/A',
             projectType: projectTypeEl?.value || 'N/A',
             status: statusProjeto,
@@ -1192,6 +1193,7 @@ function updateProjectTypeChart() {
 }
 
 // NOVA FUNÇÃO PARA GRÁFICO DE PROJETOS FINALIZADOS (ADMIN)
+// NOVA FUNÇÃO PARA GRÁFICO DE PROJETOS FINALIZADOS (ADMIN) - VERSÃO SEMANAL
 function updateFinishedProjectsChart() {
     const ctx = document.getElementById('finishedProjectsChart');
     if (!ctx) {
@@ -1204,10 +1206,32 @@ function updateFinishedProjectsChart() {
         charts.finishedProjects = null;
     }
 
-    const finishedProductions = allProductions.filter(p => p.status === 'finalizado');
+    // --- LÓGICA PARA FILTRAR PELA SEMANA ATUAL ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera a hora para comparações de data
+
+    const dayOfWeek = today.getDay(); // 0 (Domingo) a 6 (Sábado)
+    
+    // Calcula o início da semana (Domingo)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+
+    // Calcula o fim da semana (Sábado)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999); // Garante que o dia inteiro seja incluído
+
+    console.log(`Filtrando projetos da semana: ${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`);
+
+    const finishedProductionsThisWeek = allProductions.filter(p => {
+        if (p.status !== 'finalizado' || !p.date) return false;
+        const projectDate = new Date(p.date + 'T00:00:00');
+        return projectDate >= startOfWeek && projectDate <= endOfWeek;
+    });
+    // --- FIM DA LÓGICA DE FILTRO ---
     
     const projectsByUser = {};
-    finishedProductions.forEach(p => {
+    finishedProductionsThisWeek.forEach(p => {
         const userName = p.userName || p.userEmail;
         if (!projectsByUser[userName]) {
             projectsByUser[userName] = [];
@@ -1224,7 +1248,7 @@ function updateFinishedProjectsChart() {
         context.font = '16px Arial';
         context.fillStyle = '#666';
         context.textAlign = 'center';
-        context.fillText('Nenhum projeto finalizado ainda', ctx.width / 2, ctx.height / 2);
+        context.fillText('Nenhum projeto finalizado nesta semana', ctx.width / 2, ctx.height / 2);
         return;
     }
 
@@ -1234,7 +1258,7 @@ function updateFinishedProjectsChart() {
             data: {
                 labels: users,
                 datasets: [{
-                    label: 'Projetos Finalizados',
+                    label: 'Projetos Finalizados na Semana', // Título atualizado
                     data: projectCounts,
                     backgroundColor: 'rgba(75, 192, 192, 0.8)',
                     borderColor: 'rgba(75, 192, 192, 1)',
@@ -1257,7 +1281,7 @@ function updateFinishedProjectsChart() {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `Projetos: ${context.raw}`;
+                                return `Projetos na semana: ${context.raw}`;
                             }
                         }
                     }
@@ -1354,6 +1378,7 @@ function checkForDuplicateProjects() {
 
 
 // Carregar histórico do usuário
+// Carregar histórico do usuário
 function loadUserHistory() {
     const userProductions = allProductions
         .filter(p => p.userId === currentUser.uid)
@@ -1385,6 +1410,7 @@ function loadUserHistory() {
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
                     <strong>📅 ${new Date(p.date + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong>
+                    <br><strong>📁 Nº do Projeto:</strong> ${p.projectNumber || 'N/A'}
                     <br><strong>🏛️ Praça:</strong> ${p.plaza}
                     <br><strong>🎯 Projeto:</strong> ${p.projectType}
                     <br><strong>📊 Pontos:</strong> ${p.total}
@@ -1417,9 +1443,10 @@ function filterHistory() {
         .filter(p => 
             (p.plaza && p.plaza.toLowerCase().includes(searchTerm)) ||
             (p.projectType && p.projectType.toLowerCase().includes(searchTerm)) ||
+            (p.projectNumber && p.projectNumber.toLowerCase().includes(searchTerm)) || // ADICIONAR ESTA LINHA
             (p.date && p.date.includes(searchTerm))
         )
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        editProduction.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     const historyDiv = document.getElementById('productionHistory');
     if (!historyDiv) return;
@@ -1500,6 +1527,7 @@ function debugEditModal() {
 }
 
 // Função para editar produção
+// Função para editar produção
 function editProduction(productionId) {
     console.log('=== INICIANDO EDIÇÃO DA PRODUÇÃO ===');
     console.log('Production ID:', productionId);
@@ -1536,16 +1564,15 @@ function editProduction(productionId) {
     // Aguardar um momento para garantir que o modal esteja visível antes de preencher
     setTimeout(() => {
         try {
-            // Debug dos elementos
-            debugEditModal();
-            
             // Preencher o modal de edição
             const editProjectDate = document.getElementById("editProjectDate");
+            const editProjectNumber = document.getElementById("editProjectNumber");
             const editPlaza = document.getElementById("editPlaza");
             const editProjectType = document.getElementById("editProjectType");
             const editProjectStatus = document.getElementById("editProjectStatus");
             
             if (editProjectDate) editProjectDate.value = production.date || "";
+            if (editProjectNumber) editProjectNumber.value = production.projectNumber || "";
             if (editPlaza) editPlaza.value = production.plaza || "";
             if (editProjectType) editProjectType.value = production.projectType || "";
             if (editProjectStatus) editProjectStatus.value = production.status || "em_andamento";
@@ -1761,6 +1788,7 @@ async function updateProduction() {
         
         const updatedProduction = {
             date: date,
+            projectNumber: requiredElements.editProjectNumber.value.trim(),
             plaza: plaza,
             projectType: projectType,
             status: statusFinal,

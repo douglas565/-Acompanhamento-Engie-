@@ -268,7 +268,6 @@ body {
 .charts-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
     gap: 30px;
     margin: 30px 0;
 }
@@ -324,15 +323,6 @@ body {
     left: 0;
     width: 100% !important;
     height: 100% !important;
-}
-
-/* Layout específico para 3 gráficos */
-.charts-container .chart-card:nth-child(3) {
-    /* Terceiro gráfico - ocupa toda a linha */
-    grid-column: 1 / -1;
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
 }
 
 .total-points {
@@ -492,14 +482,13 @@ body {
     backdrop-filter: blur(5px);
 }
 
-/* Ajustar o tamanho e layout do modal */
 .modal-content {
-    max-width: 90vw;       /* nunca ultrapassar 90% da largura da tela */
+    max-width: 90vw;
     width: 100%;
-    max-height: 90vh;      /* altura máxima da tela */
-    overflow-y: auto;      /* rolagem vertical se passar da altura */
-    word-wrap: break-word; /* quebra de palavras longas */
-    white-space: normal;   /* quebra linhas automaticamente */
+    max-height: 90vh;
+    overflow-y: auto;
+    word-wrap: break-word;
+    white-space: normal;
     background: white;
     border-radius: 12px;
     padding: 20px;
@@ -555,7 +544,6 @@ body {
 
 /* RESPONSIVE DESIGN CORRIGIDO */
 
-/* Tablets grandes e monitores menores */
 @media (max-width: 1200px) {
     .points-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -567,17 +555,11 @@ body {
         gap: 25px;
     }
     
-    .charts-container .chart-card:nth-child(3) {
-        grid-column: auto;
-        max-width: none;
-    }
-    
     .chart-wrapper {
         height: 280px;
     }
 }
 
-/* Tablets */
 @media (max-width: 768px) {
     .container {
         padding: 15px;
@@ -635,7 +617,6 @@ body {
         flex-direction: column;
         gap: 10px;
     }
-
     
     .total-points {
         font-size: 1.8em;
@@ -643,7 +624,6 @@ body {
     }
 }
 
-/* Mobile pequeno */
 @media (max-width: 520px) {
     .points-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -688,27 +668,14 @@ body {
     }
 }
 
-/* Animações melhoradas */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .card {
@@ -719,196 +686,14 @@ body {
     animation: slideInFromRight 0.8s ease-out;
 }
 
-.production-item:nth-child(even) {
-    animation: slideInFromRight 0.5s ease-out;
-}
-
-.production-item:nth-child(odd) {
-    animation: fadeIn 0.5s ease-out;
-}
-
-/* Acessibilidade melhorada */
-.btn:focus {
-    outline: 3px solid rgba(102, 126, 234, 0.5);
-    outline-offset: 2px;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-/* Scrollbar personalizada */
-.production-list::-webkit-scrollbar,
-.user-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.production-list::-webkit-scrollbar-track,
-.user-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.production-list::-webkit-scrollbar-thumb,
-.user-list::-webkit-scrollbar-thumb {
-    background: #667eea;
-    border-radius: 4px;
-}
-
-.production-list::-webkit-scrollbar-thumb:hover,
-.user-list::-webkit-scrollbar-thumb:hover {
-    background: #764ba2;
-}
-
-/* Melhorias para impressão */
-@media print {
-    .btn, .admin-panel, .loading-screen {
-        display: none !important;
-    }
-    
-    .chart-card {
-        break-inside: avoid;
-    }
-    
-    body {
-        background: white;
-    }
-    
-    .card {
-        box-shadow: none;
-        border: 1px solid #ddd;
-    }
-}
-
-/* PATCH CSS - CORREÇÃO ESPECÍFICA PARA OS GRÁFICOS */
-
-/* Container principal dos gráficos */
-.charts-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 30px;
-    margin: 30px 0;
-}
-
-/* Estilo base para todos os cards de gráfico */
-.chart-card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    border: 1px solid rgba(0,0,0,0.05);
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Título dos gráficos */
-.chart-card h3 {
-    margin-bottom: 25px;
-    color: #333;
-    font-size: 1.4em;
-    text-align: center;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
-    flex-shrink: 0;
-}
-
-/* Wrapper para o canvas */
-.chart-wrapper {
-    position: relative;
-    height: 320px;
-    width: 100%;
-    margin: 0 auto;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Canvas dos gráficos */
-.chart-card canvas {
-    max-width: 100% !important;
-    height: auto !important;
-    display: block;
-}
-
-.chart-card .chart-wrapper canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Layout específico - terceiro gráfico centralizado */
-.charts-container .chart-card:nth-child(3) {
-    grid-column: 1 / -1;
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
-}
-
 @keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Responsive para gráficos */
-@media (max-width: 1200px) {
-    .charts-container {
-        grid-template-columns: 1fr;
-        gap: 25px;
-    }
-    
-    .charts-container .chart-card:nth-child(3) {
-        grid-column: auto;
-        max-width: none;
-    }
-    
-    .chart-wrapper {
-        height: 280px;
-    }
-}
-
-@media (max-width: 768px) {
-    .charts-container {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    
-    .chart-wrapper {
-        height: 250px;
-    }
-}
-
-@media (max-width: 520px) {
-    .chart-wrapper {
-        height: 220px;
-    }
-}
-
-.btn-logout {
-    background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%);
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
 }
 
 .btn-edit {
@@ -918,12 +703,10 @@ body {
 }
 
 .btn-edit:hover:not(:disabled) {
-    background: linear-gradient(135deg, #fcb69f 0%, #ffecd2 100%);
     box-shadow: 0 8px 25px rgba(252, 182, 159, 0.3);
 }
 
-/* Estilos para o Modal de Detalhes Semanais */
-#weeklyDetails {
+#weeklyDetails, #finishedProjectsDetails {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -945,7 +728,6 @@ body {
     border-bottom: 1px solid #eee;
     padding-bottom: 15px;
     margin-bottom: 20px;
-    
 }
 
 .modal-header h3 {
@@ -967,7 +749,7 @@ body {
     color: #333;
 }
 
-.modal-body p {
+.modal-body p, .modal-body li {
     font-size: 1.1em;
     line-height: 1.6;
     color: #555;
@@ -976,39 +758,3 @@ body {
 .modal-body strong {
     color: #007bff;
 }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -60%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
-}
-
-/* Layout flexível para os gráficos */
-.charts-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 30px;
-}
-
-/* Cada gráfico ocupa até 45% da largura (lado a lado) */
-.chart-card {
-    flex: 1 1 45%;
-    max-width: 45%;
-    min-width: 300px;
-}
-
-/* Tipos de Projeto ocupa mais largura e centralizado */
-.chart-card:nth-child(3) {
-    flex: 1 1 60%;
-    max-width: 60%;
-}
-
-/* Ajuste para telas menores */
-@media (max-width: 768px) {
-    .chart-card {
-        flex: 1 1 100%;
-        max-width: 100%;
-    }
-}
-

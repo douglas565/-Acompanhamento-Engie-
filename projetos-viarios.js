@@ -74,26 +74,34 @@
     }
 
     // Função auxiliar para mostrar elementos de admin
+// Função auxiliar para mostrar elementos de admin
     function mostrarElementosAdmin() {
+        // Lista APENAS com os gráficos que queres manter
         const idsAdmin = [
             'graficoGeralContainer', 
             'graficoProjetistaContainer', 
-            'graficoRevisoesContainer',
-            'teamChartContainer', 
-            'monthlyChartContainer', 
-            'projectTypeChartContainer', 
-            'finishedProjectsChartCard'
+            'graficoRevisoesContainer'
         ];
         
+        // Remove a classe admin-only e garante display flex
         idsAdmin.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.classList.remove('admin-only');
-                // Garante display adequado para não quebrar layout
                 el.style.display = 'flex'; 
                 el.style.flexDirection = 'column';
             }
         });
+
+        // ESCONDER explicitamente o gráfico individual do próprio admin, se desejado
+        // (Opcional: se o admin quiser ver a sua própria produção, remova estas linhas)
+        /*
+        const chartIndividual = document.getElementById('chartSemanalIndividual');
+        if (chartIndividual) {
+             const container = chartIndividual.closest('.chart-container');
+             if(container) container.style.display = 'none';
+        }
+        */
         
         const tabelaTitulo = document.getElementById('tabelaTitulo');
         if(tabelaTitulo) tabelaTitulo.textContent = 'Todos os Registros de Projetos Viários';
@@ -281,7 +289,8 @@
     async function atualizarGraficos(dados) {
         if (typeof Chart === 'undefined') return;
 
-        // Gráfico individual (sempre visível)
+        // Gráfico individual (sempre visível para o utilizador, opcional para admin)
+        // Se quiser esconder do admin, envolva num `if (!isAdmin)`
         const dadosIndividuais = dados.filter(item => item.userId === currentUser.uid);
         atualizarGraficoSemanalIndividual(dadosIndividuais);
         
@@ -290,9 +299,10 @@
             atualizarGraficoSemanalGeral(dados);
             atualizarGraficoProjetista(dados);
             atualizarGraficoRevisoes(dados);
+            
+            // REMOVIDO: Chamadas para gráficos de praças que não existem mais aqui
         }
     }
-
     // 1. Gráfico Semanal Individual
     function atualizarGraficoSemanalIndividual(dados) {
         const canvas = document.getElementById('chartSemanalIndividual');

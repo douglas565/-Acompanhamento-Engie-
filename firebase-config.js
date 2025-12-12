@@ -21,15 +21,18 @@ const db = firebase.firestore();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 // Configurações do Firestore
+// Adicionado 'merge: true' para evitar o aviso de "overriding original host"
 db.settings({
-  cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+  cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+  merge: true 
 });
 
 // Habilitar cache offline
-db.enablePersistence()
+// Adicionado { synchronizeTabs: true } para evitar erro "failed-precondition" com múltiplas abas abertas
+db.enablePersistence({ synchronizeTabs: true })
   .catch((err) => {
     if (err.code == 'failed-precondition') {
-      console.warn('Múltiplas abas abertas, cache desabilitado');
+      console.warn('Persistência offline desativada (Possivelmente muitas abas abertas).');
     } else if (err.code == 'unimplemented') {
       console.warn('Navegador não suporta cache offline');
     }

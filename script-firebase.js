@@ -71,19 +71,23 @@ function showLoginScreen() {
 
 function showMainScreen() {
     hideLoadingScreen();
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('mainScreen').classList.remove('hidden');
     
-    // Controla a visibilidade do painel de admin e do gráfico de admin
+    const loginScreen = document.getElementById('loginScreen');
+    const mainScreen = document.getElementById('mainScreen');
+    
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (mainScreen) mainScreen.classList.remove('hidden');
+    
+    // CORREÇÃO: Verifica se os elementos de Admin existem antes de acessar classList
     const adminPanel = document.getElementById('adminPanel');
     const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
 
     if (currentUserData && currentUserData.role === 'admin') {
-        adminPanel.classList.remove('hidden');
-        finishedProjectsChartCard.classList.remove('hidden');
+        if (adminPanel) adminPanel.classList.remove('hidden');
+        if (finishedProjectsChartCard) finishedProjectsChartCard.classList.remove('hidden');
     } else {
-        adminPanel.classList.add('hidden');
-        finishedProjectsChartCard.classList.add('hidden');
+        if (adminPanel) adminPanel.classList.add('hidden');
+        if (finishedProjectsChartCard) finishedProjectsChartCard.classList.add('hidden');
     }
     
     // Aguardar um momento para os elementos DOM estarem prontos
@@ -143,9 +147,17 @@ async function handleUserLogin(user) {
     // Carregar dados do usuário
     await loadUserData(user.uid);
     
-    // Atualizar interface
-    document.getElementById('currentUser').textContent = currentUserData.name || currentUserData.email;
-    document.getElementById('userRole').textContent = `(${currentUserData.team} - ${currentUserData.role === 'admin' ? 'Administrador' : 'Usuário'})`;
+    // CORREÇÃO: Verifica se os elementos existem antes de tentar alterá-los
+    const currentUserEl = document.getElementById('currentUser');
+    const userRoleEl = document.getElementById('userRole');
+    
+    if (currentUserEl) {
+        currentUserEl.textContent = currentUserData.name || currentUserData.email;
+    }
+    
+    if (userRoleEl) {
+        userRoleEl.textContent = `(${currentUserData.team} - ${currentUserData.role === 'admin' ? 'Administrador' : 'Usuário'})`;
+    }
     
     showMainScreen();
 }

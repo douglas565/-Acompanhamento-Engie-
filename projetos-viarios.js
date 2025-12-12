@@ -35,6 +35,28 @@
             window.location.href = 'index.html';
         }
     });
+    
+    // Sobrescrever a função updateDashboard do script-firebase.js para que ela seja executada
+    // na página de viários, carregando os gráficos de praças.
+    if (typeof window.updateDashboard === 'function') {
+        const originalUpdateDashboard = window.updateDashboard;
+        window.updateDashboard = function() {
+            // Executa a lógica original de praças
+            originalUpdateDashboard();
+            // Garante que os gráficos de praças fiquem visíveis para o admin
+            if (isAdmin) {
+                const teamChartContainer = document.getElementById('teamChartContainer');
+                const monthlyChartContainer = document.getElementById('monthlyChartContainer');
+                const projectTypeChartContainer = document.getElementById('projectTypeChartContainer');
+                const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
+                
+                if (teamChartContainer) teamChartContainer.classList.remove('admin-only');
+                if (monthlyChartContainer) monthlyChartContainer.classList.remove('admin-only');
+                if (projectTypeChartContainer) projectTypeChartContainer.classList.remove('admin-only');
+                if (finishedProjectsChartCard) finishedProjectsChartCard.classList.remove('admin-only');
+            }
+        };
+    }
 
     // Inicializar aplicação
     async function inicializarApp() {
@@ -71,9 +93,19 @@
                     // Mostrar elementos apenas para admin
                     const graficoGeral = document.getElementById('graficoGeralContainer');
                     const graficoProj = document.getElementById('graficoProjetistaContainer');
+                    const graficoRevisoes = document.getElementById('graficoRevisoesContainer');
+                    const teamChartContainer = document.getElementById('teamChartContainer');
+                    const monthlyChartContainer = document.getElementById('monthlyChartContainer');
+                    const projectTypeChartContainer = document.getElementById('projectTypeChartContainer');
+                    const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
                     
                     if (graficoGeral) graficoGeral.classList.remove('admin-only');
                     if (graficoProj) graficoProj.classList.remove('admin-only');
+                    if (graficoRevisoes) graficoRevisoes.classList.remove('admin-only');
+                    if (teamChartContainer) teamChartContainer.classList.remove('admin-only');
+                    if (monthlyChartContainer) monthlyChartContainer.classList.remove('admin-only');
+                    if (projectTypeChartContainer) projectTypeChartContainer.classList.remove('admin-only');
+                    if (finishedProjectsChartCard) finishedProjectsChartCard.classList.remove('admin-only');
                     
                     document.getElementById('tabelaTitulo').textContent = 'Todos os Registros de Projetos Viários';
                     
@@ -318,7 +350,8 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            stepSize: 1
+                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
+                            // O Chart.js agora escolherá o melhor stepSize automaticamente
                         }
                     }
                 }
@@ -371,7 +404,8 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            stepSize: 1
+                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
+                            // O Chart.js agora escolherá o melhor stepSize automaticamente
                         }
                     }
                 }
@@ -431,7 +465,8 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            stepSize: 1
+                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
+                            // O Chart.js agora escolherá o melhor stepSize automaticamente
                         }
                     }
                 }

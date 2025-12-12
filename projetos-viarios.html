@@ -193,6 +193,7 @@
     
     <div id="mainContent" class="container" style="display: none;">
         <div class="header">
+            <a href="index.html" class="btn btn-secondary" style="margin-right: 20px;">← Voltar para Início</a>
             <h1>Projetos Viários - Acompanhamento</h1>
             <div class="user-info">
                 <strong>Usuário:</strong> <span id="userName"></span>
@@ -246,6 +247,24 @@
             <div id="graficoProjetistaContainer" class="chart-container admin-only">
                 <h3>📊 Produção por Projetista (Total)</h3>
                 <canvas id="chartProjetista"></canvas>
+            </div>
+            
+            <!-- Gráficos de Praças - Apenas Admin -->
+            <div id="teamChartContainer" class="chart-container admin-only">
+                <h3>📊 Produção por Equipe (Praças)</h3>
+                <canvas id="teamChart"></canvas>
+            </div>
+            <div id="monthlyChartContainer" class="chart-container admin-only">
+                <h3>📈 Produção Semanal (Praças)</h3>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+            <div id="projectTypeChartContainer" class="chart-container admin-only">
+                <h3>📋 Tipos de Projeto (Praças)</h3>
+                <canvas id="projectTypeChart"></canvas>
+            </div>
+            <div id="finishedProjectsChartCard" class="chart-container admin-only">
+                <h3>✅ Projetos Finalizados por Projetista (Semanal - Praças)</h3>
+                <canvas id="finishedProjectsChart"></canvas>
             </div>
             
             <!-- Gráfico de Revisões - Apenas Admin -->
@@ -308,6 +327,8 @@
     </div>
     
     <script src="firebase-config.js"></script>
+    <!-- Incluir script-firebase.js para carregar os dados e gráficos de praças -->
+    <script src="script-firebase.js"></script>
     <script src="projetos-viarios.js"></script>
 </body>
 </html>

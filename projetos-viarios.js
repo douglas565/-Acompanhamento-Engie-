@@ -16,6 +16,9 @@
     let chartSemanalGeral = null;
     let chartSemanalIndividual = null;
     let chartProjetista = null;
+    let chartRevisoes = null;
+    let editingId = null;
+    let todosOsDados = [];
 
     // Inicialização com Firebase Auth
     firebase.auth().onAuthStateChanged(function(user) {
@@ -206,7 +209,10 @@
                 <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
                 <td>${item.quantidadePontos}</td>
                 <td>${item.revisao ? 'Sim' : 'Não'}</td>
-                <td><button class="delete-btn" data-id="${item.id}">Excluir</button></td>
+                <td>
+                    <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" data-id="${item.id}" onclick="abrirModalEdicao('${item.id}')">Editar</button>
+                    <button class="delete-btn" data-id="${item.id}">Excluir</button>
+                </td>
             `;
             
             tr.innerHTML = rowHTML;
@@ -262,6 +268,7 @@
                 
                 atualizarGraficoSemanalGeral(todosDados);
                 atualizarGraficoProjetista(todosDados);
+                atualizarGraficoRevisoes(todosDados);
             } catch (error) {
                 console.error('Erro ao carregar dados para gráficos gerais:', error);
             }
@@ -431,6 +438,138 @@
             }
         });
     }
+
+    // Gráfico de Revisões (apenas admin)
+    function atualizarGraficoRevisoes(dados) {
+        const canvas = document.getElementById('chartRevisoes');
+        if (!canvas) return;
+        
+        let totalRevisoes = 0;
+        let totalNovos = 0;
+        
+        dados.forEach(item => {
+            if (item.revisao) {
+                totalRevisoes++;
+            } else {
+                totalNovos++;
+            }
+        });
+        
+        const total = totalRevisoes + totalNovos;
+        const percentRevisoes = total > 0 ? ((totalRevisoes / total) * 100).toFixed(1) : 0;
+        const percentNovos = total > 0 ? ((totalNovos / total) * 100).toFixed(1) : 0;
+        
+        const ctx = canvas.getContext('2d');
+        
+        if (chartRevisoes) {
+            chartRevisoes.destroy();
+        }
+        
+        chartRevisoes = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    `Revisões (${percentRevisoes}%)`,
+                    `Projetos Novos (${percentNovos}%)`
+                ],
+                datasets: [{
+                    data: [totalRevisoes, totalNovos],
+                    backgroundColor: [
+                        'rgba(255, 159, 64, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                return `${label}: ${value} projetos`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Funções de Edição - tornar globais
+    window.abrirModalEdicao = async function(id) {
+        editingId = id;
+        
+        try {
+            const doc = await db.collection('projetosViarios').doc(id).get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                
+                document.getElementById('editNomeVia').value = data.nomeVia;
+                document.getElementById('editData').value = data.data;
+                document.getElementById('editQuantidadePontos').value = data.quantidadePontos;
+                document.getElementById('editRevisao').checked = data.revisao;
+                
+                document.getElementById('editModal').style.display = 'flex';
+            }
+        } catch (error) {
+            console.error('Erro ao carregar dados para edição:', error);
+            alert('Erro ao carregar dados.');
+        }
+    };
+    
+    window.fecharModalEdicao = function() {
+        document.getElementById('editModal').style.display = 'none';
+        editingId = null;
+    };
+    
+    // Configurar formulário de edição
+    document.addEventListener('DOMContentLoaded', function() {
+        const editForm = document.getElementById('editForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!editingId) return;
+                
+                const dadosAtualizados = {
+                    nomeVia: document.getElementById('editNomeVia').value,
+                    data: document.getElementById('editData').value,
+                    quantidadePontos: parseInt(document.getElementById('editQuantidadePontos').value),
+                    revisao: document.getElementById('editRevisao').checked
+                };
+                
+                try {
+                    await db.collection('projetosViarios').doc(editingId).update(dadosAtualizados);
+                    
+                    fecharModalEdicao();
+                    await carregarDados();
+                    
+                    alert('Registro atualizado com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao atualizar registro:', error);
+                    alert('Erro ao atualizar registro. Tente novamente.');
+                }
+            });
+        }
+    });
 
     // Exportar para Excel - tornar global
     window.exportarParaExcel = async function() {

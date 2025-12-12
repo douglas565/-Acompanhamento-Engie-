@@ -765,6 +765,7 @@ function updateTeamChart() {
     const ctx = document.getElementById('teamChart');
     const teamChartCard = ctx ? ctx.closest('.chart-card') : null;
 
+    // 1. Verificação de permissão (Admin)
     if (!currentUserData || currentUserData.role !== 'admin') {
         if (teamChartCard) teamChartCard.style.display = 'none';
         return; // Sai da função sem renderizar nada
@@ -777,12 +778,13 @@ function updateTeamChart() {
         return;
     }
     
-    // Destruir gráfico anterior
+    // 2. Destruir gráfico anterior para evitar sobreposição
     if (charts.team) {
         charts.team.destroy();
         charts.team = null;
     }
     
+    // 3. Calcular dados
     const curitibaPoints = allProductions
         .filter(p => p.team === 'Curitiba')
         .reduce((sum, p) => sum + p.total, 0);
@@ -793,7 +795,7 @@ function updateTeamChart() {
     
     console.log('Dados do gráfico de equipes:', { curitibaPoints, florianopolisPoints });
     
-    // Verificar se há dados
+    // 4. Verificar se há dados para exibir
     if (curitibaPoints === 0 && florianopolisPoints === 0) {
         const context = ctx.getContext('2d');
         context.clearRect(0, 0, ctx.width, ctx.height);
@@ -802,6 +804,13 @@ function updateTeamChart() {
         context.textAlign = 'center';
         context.fillText('Nenhum dado disponível', ctx.width/2, ctx.height/2);
         return;
+    }
+
+    // 5. CONFIGURAÇÃO SEGURA DO PLUGIN (A CORREÇÃO PRINCIPAL)
+    // Cria uma lista e só adiciona o plugin se ele estiver definido no navegador
+    const pluginsList = [];
+    if (typeof ChartDataLabels !== 'undefined') {
+        pluginsList.push(ChartDataLabels);
     }
     
     try {
@@ -837,6 +846,7 @@ function updateTeamChart() {
                             }
                         }
                     },
+                    // Configuração dos rótulos (só aparece se o plugin carregar)
                     datalabels: {
                         color: '#fff',
                         font: {
@@ -844,12 +854,15 @@ function updateTeamChart() {
                             size: 16
                         },
                         formatter: function(value, context) {
-                            return value; // Mostrar valores reais ao invés de porcentagens
+                            return value; // Mostrar valores reais
                         },
                         anchor: 'center',
                         align: 'center',
                         offset: 0,
-                        clamp: true
+                        clamp: true,
+                        display: function(context) {
+                            return context.dataset.data[context.dataIndex] > 0; // Esconde se for zero
+                        }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
@@ -867,7 +880,8 @@ function updateTeamChart() {
                     }
                 }
             },
-            plugins: [ChartDataLabels]
+            // Usa a lista segura criada no passo 5
+            plugins: pluginsList
         });
         console.log('Gráfico de equipes criado com sucesso');
     } catch (error) {

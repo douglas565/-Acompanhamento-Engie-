@@ -18,7 +18,6 @@
     let chartProjetista = null;
     let chartRevisoes = null;
     let editingId = null;
-    let todosOsDados = [];
 
     // Inicialização com Firebase Auth
     firebase.auth().onAuthStateChanged(function(user) {
@@ -36,24 +35,20 @@
         }
     });
     
-    // Sobrescrever a função updateDashboard do script-firebase.js para que ela seja executada
-    // na página de viários, carregando os gráficos de praças.
+    // Sobrescrever a função updateDashboard do script-firebase.js
     if (typeof window.updateDashboard === 'function') {
         const originalUpdateDashboard = window.updateDashboard;
         window.updateDashboard = function() {
-            // Executa a lógica original de praças
             originalUpdateDashboard();
-            // Garante que os gráficos de praças fiquem visíveis para o admin
             if (isAdmin) {
-                const teamChartContainer = document.getElementById('teamChartContainer');
-                const monthlyChartContainer = document.getElementById('monthlyChartContainer');
-                const projectTypeChartContainer = document.getElementById('projectTypeChartContainer');
-                const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
-                
-                if (teamChartContainer) teamChartContainer.classList.remove('admin-only');
-                if (monthlyChartContainer) monthlyChartContainer.classList.remove('admin-only');
-                if (projectTypeChartContainer) projectTypeChartContainer.classList.remove('admin-only');
-                if (finishedProjectsChartCard) finishedProjectsChartCard.classList.remove('admin-only');
+                const elementosAdmin = [
+                    'teamChartContainer', 'monthlyChartContainer', 
+                    'projectTypeChartContainer', 'finishedProjectsChartCard'
+                ];
+                elementosAdmin.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('admin-only');
+                });
             }
         };
     }
@@ -91,29 +86,28 @@
                 
                 if (isAdmin) {
                     // Mostrar elementos apenas para admin
-                    const graficoGeral = document.getElementById('graficoGeralContainer');
-                    const graficoProj = document.getElementById('graficoProjetistaContainer');
-                    const graficoRevisoes = document.getElementById('graficoRevisoesContainer');
-                    const teamChartContainer = document.getElementById('teamChartContainer');
-                    const monthlyChartContainer = document.getElementById('monthlyChartContainer');
-                    const projectTypeChartContainer = document.getElementById('projectTypeChartContainer');
-                    const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
+                    const idsAdmin = [
+                        'graficoGeralContainer', 'graficoProjetistaContainer', 
+                        'graficoRevisoesContainer', 'teamChartContainer', 
+                        'monthlyChartContainer', 'projectTypeChartContainer', 
+                        'finishedProjectsChartCard'
+                    ];
                     
-                    if (graficoGeral) graficoGeral.classList.remove('admin-only');
-                    if (graficoProj) graficoProj.classList.remove('admin-only');
-                    if (graficoRevisoes) graficoRevisoes.classList.remove('admin-only');
-                    if (teamChartContainer) teamChartContainer.classList.remove('admin-only');
-                    if (monthlyChartContainer) monthlyChartContainer.classList.remove('admin-only');
-                    if (projectTypeChartContainer) projectTypeChartContainer.classList.remove('admin-only');
-                    if (finishedProjectsChartCard) finishedProjectsChartCard.classList.remove('admin-only');
+                    idsAdmin.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.classList.remove('admin-only');
+                    });
                     
                     document.getElementById('tabelaTitulo').textContent = 'Todos os Registros de Projetos Viários';
                     
-                    // Adicionar coluna de projetista na tabela
+                    // Adicionar coluna de projetista na tabela se ainda não existir
                     const headerRow = document.getElementById('tableHeader');
-                    const projetistaHeader = document.createElement('th');
-                    projetistaHeader.textContent = 'Projetista';
-                    headerRow.insertBefore(projetistaHeader, headerRow.firstChild);
+                    if (headerRow && !headerRow.querySelector('.th-projetista')) {
+                        const projetistaHeader = document.createElement('th');
+                        projetistaHeader.textContent = 'Projetista';
+                        projetistaHeader.className = 'th-projetista';
+                        headerRow.insertBefore(projetistaHeader, headerRow.firstChild);
+                    }
                 }
             }
         } catch (error) {
@@ -150,14 +144,9 @@
             
             try {
                 await db.collection('projetosViarios').add(novoRegistro);
-                
-                // Limpar formulário
                 form.reset();
                 configurarDataAtual();
-                
-                // Recarregar dados
                 await carregarDados();
-                
                 alert('Registro adicionado com sucesso!');
             } catch (error) {
                 console.error('Erro ao adicionar registro:', error);
@@ -170,46 +159,23 @@
     async function carregarDados() {
         try {
             let dados = [];
+            let snapshot;
             
             if (isAdmin) {
-                // Admin vê todos os registros (sem orderBy composto)
-                const snapshot = await db.collection('projetosViarios').get();
-                
-                snapshot.forEach(doc => {
-                    dados.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-                
-                // Ordenar manualmente por data (mais recente primeiro)
-                dados.sort((a, b) => {
-                    const dateA = new Date(a.data);
-                    const dateB = new Date(b.data);
-                    return dateB - dateA;
-                });
+                snapshot = await db.collection('projetosViarios').get();
             } else {
-                // Usuário comum vê apenas seus registros (sem orderBy composto)
-                const snapshot = await db.collection('projetosViarios')
+                snapshot = await db.collection('projetosViarios')
                     .where('userId', '==', currentUser.uid)
                     .get();
-                
-                snapshot.forEach(doc => {
-                    dados.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-                
-                // Ordenar manualmente por data (mais recente primeiro)
-                dados.sort((a, b) => {
-                    const dateA = new Date(a.data);
-                    const dateB = new Date(b.data);
-                    return dateB - dateA;
-                });
             }
             
-            // Atualizar interface
+            snapshot.forEach(doc => {
+                dados.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Ordenar por data (mais recente primeiro)
+            dados.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
             atualizarTabela(dados);
             await atualizarGraficos(dados);
             
@@ -228,10 +194,8 @@
         
         dados.forEach(item => {
             const tr = document.createElement('tr');
-            
             let rowHTML = '';
             
-            // Se admin, mostrar coluna de projetista
             if (isAdmin) {
                 rowHTML += `<td>${item.userEmail || 'N/A'}</td>`;
             }
@@ -242,25 +206,18 @@
                 <td>${item.quantidadePontos}</td>
                 <td>${item.revisao ? 'Sim' : 'Não'}</td>
                 <td>
-                    <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" data-id="${item.id}" onclick="abrirModalEdicao('${item.id}')">Editar</button>
-                    <button class="delete-btn" data-id="${item.id}">Excluir</button>
+                    <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" onclick="abrirModalEdicao('${item.id}')">Editar</button>
+                    <button class="delete-btn" onclick="excluirRegistro('${item.id}')">Excluir</button>
                 </td>
             `;
             
             tr.innerHTML = rowHTML;
             tbody.appendChild(tr);
         });
-        
-        // Adicionar eventos de exclusão
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                excluirRegistro(this.dataset.id);
-            });
-        });
     }
 
-    // Excluir registro
-    async function excluirRegistro(id) {
+    // Excluir registro - Tornar global para o onclick
+    window.excluirRegistro = async function(id) {
         if (confirm('Tem certeza que deseja excluir este registro?')) {
             try {
                 await db.collection('projetosViarios').doc(id).delete();
@@ -271,7 +228,7 @@
                 alert('Erro ao excluir registro.');
             }
         }
-    }
+    };
 
     // Função para obter número da semana
     function getWeekNumber(date) {
@@ -283,6 +240,16 @@
         return `Sem ${weekNo}`;
     }
 
+    // Gerar cor baseada numa string (para cada usuário ter uma cor fixa)
+    function stringToColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return '#' + '00000'.substring(0, 6 - c.length) + c;
+    }
+
     // Atualizar todos os gráficos
     async function atualizarGraficos(dados) {
         // Gráfico individual (sempre visível)
@@ -292,17 +259,12 @@
         // Gráficos gerais (apenas admin)
         if (isAdmin) {
             try {
-                const snapshot = await db.collection('projetosViarios').get();
-                const todosDados = [];
-                snapshot.forEach(doc => {
-                    todosDados.push(doc.data());
-                });
-                
-                atualizarGraficoSemanalGeral(todosDados);
-                atualizarGraficoProjetista(todosDados);
-                atualizarGraficoRevisoes(todosDados);
+                // Se o usuário atual for admin, 'dados' já contém todos os registros
+                atualizarGraficoSemanalGeral(dados);
+                atualizarGraficoProjetista(dados);
+                atualizarGraficoRevisoes(dados);
             } catch (error) {
-                console.error('Erro ao carregar dados para gráficos gerais:', error);
+                console.error('Erro ao atualizar gráficos gerais:', error);
             }
         }
     }
@@ -316,10 +278,7 @@
         
         dados.forEach(item => {
             const semana = getWeekNumber(item.data);
-            if (!dadosPorSemana[semana]) {
-                dadosPorSemana[semana] = 0;
-            }
-            dadosPorSemana[semana] += item.quantidadePontos;
+            dadosPorSemana[semana] = (dadosPorSemana[semana] || 0) + item.quantidadePontos;
         });
         
         const semanas = Object.keys(dadosPorSemana).sort();
@@ -346,36 +305,50 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
-                            // O Chart.js agora escolherá o melhor stepSize automaticamente
-                        }
-                    }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
 
-    // Gráfico semanal geral (apenas admin)
+    // Gráfico semanal geral (apenas admin) - ATUALIZADO PARA BARRAS POR USUÁRIO
     function atualizarGraficoSemanalGeral(dados) {
         const canvas = document.getElementById('chartSemanalGeral');
         if (!canvas) return;
         
-        const dadosPorSemana = {};
-        
+        // 1. Organizar dados: Semana -> Usuário -> Pontos
+        const dadosAgrupados = {};
+        const todasSemanas = new Set();
+        const todosUsuarios = new Set();
+
         dados.forEach(item => {
             const semana = getWeekNumber(item.data);
-            if (!dadosPorSemana[semana]) {
-                dadosPorSemana[semana] = 0;
-            }
-            dadosPorSemana[semana] += item.quantidadePontos;
+            const usuario = item.userEmail || 'Desconhecido';
+            
+            todasSemanas.add(semana);
+            todosUsuarios.add(usuario);
+
+            if (!dadosAgrupados[semana]) dadosAgrupados[semana] = {};
+            if (!dadosAgrupados[semana][usuario]) dadosAgrupados[semana][usuario] = 0;
+            
+            dadosAgrupados[semana][usuario] += item.quantidadePontos;
         });
-        
-        const semanas = Object.keys(dadosPorSemana).sort();
-        const valores = semanas.map(sem => dadosPorSemana[sem]);
+
+        const semanasOrdenadas = Array.from(todasSemanas).sort();
+        const listaUsuarios = Array.from(todosUsuarios);
+
+        // 2. Criar datasets (um por usuário)
+        const datasets = listaUsuarios.map(usuario => {
+            const pontosPorSemana = semanasOrdenadas.map(semana => {
+                return dadosAgrupados[semana]?.[usuario] || 0;
+            });
+
+            return {
+                label: usuario,
+                data: pontosPorSemana,
+                backgroundColor: stringToColor(usuario), // Cor única por usuário
+                stack: 'Semana' // Agrupa na mesma barra
+            };
+        });
         
         const ctx = canvas.getContext('2d');
         
@@ -384,29 +357,34 @@
         }
         
         chartSemanalGeral = new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
-                labels: semanas.length > 0 ? semanas : ['Sem dados'],
-                datasets: [{
-                    label: 'Pontos Totais por Semana',
-                    data: valores.length > 0 ? valores : [0],
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
+                labels: semanasOrdenadas.length > 0 ? semanasOrdenadas : ['Sem dados'],
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Produção Semanal por Equipe (Pontos por Usuário)'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
                 scales: {
+                    x: {
+                        stacked: true,
+                    },
                     y: {
-                        beginAtZero: true,
-                        ticks: {
-                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
-                            // O Chart.js agora escolherá o melhor stepSize automaticamente
-                        }
+                        stacked: true,
+                        beginAtZero: true
                     }
                 }
             }
@@ -422,10 +400,7 @@
         
         dados.forEach(item => {
             const email = item.userEmail || 'Sem email';
-            if (!dadosPorProjetista[email]) {
-                dadosPorProjetista[email] = 0;
-            }
-            dadosPorProjetista[email] += item.quantidadePontos;
+            dadosPorProjetista[email] = (dadosPorProjetista[email] || 0) + item.quantidadePontos;
         });
         
         const projetistas = Object.keys(dadosPorProjetista);
@@ -437,44 +412,29 @@
             chartProjetista.destroy();
         }
         
-        const cores = [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)'
-        ];
+        // Cores variadas
+        const bgColors = projetistas.map(p => stringToColor(p));
         
         chartProjetista = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: projetistas.length > 0 ? projetistas : ['Sem dados'],
                 datasets: [{
-                    label: 'Pontos por Projetista',
+                    label: 'Pontos Totais',
                     data: valores.length > 0 ? valores : [0],
-                    backgroundColor: cores.slice(0, Math.max(projetistas.length, 1)),
-                    borderColor: cores.slice(0, Math.max(projetistas.length, 1)).map(c => c.replace('0.6', '1')),
+                    backgroundColor: bgColors,
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            // Removido stepSize: 1 para evitar o aviso de ticks excessivos
-                            // O Chart.js agora escolherá o melhor stepSize automaticamente
-                        }
-                    }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
 
-    // Gráfico de Revisões (apenas admin)
+    // Gráfico de Revisões (apenas admin) - PERCENTUAL
     function atualizarGraficoRevisoes(dados) {
         const canvas = document.getElementById('chartRevisoes');
         if (!canvas) return;
@@ -510,11 +470,11 @@
                 datasets: [{
                     data: [totalRevisoes, totalNovos],
                     backgroundColor: [
-                        'rgba(255, 159, 64, 0.8)',
-                        'rgba(75, 192, 192, 0.8)'
+                        'rgba(255, 99, 132, 0.8)', // Cor Revisão
+                        'rgba(75, 192, 192, 0.8)'  // Cor Novo
                     ],
                     borderColor: [
-                        'rgba(255, 159, 64, 1)',
+                        'rgba(255, 99, 132, 1)',
                         'rgba(75, 192, 192, 1)'
                     ],
                     borderWidth: 2
@@ -525,22 +485,11 @@
                 maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 14
-                            }
-                        }
+                        position: 'bottom'
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                return `${label}: ${value} projetos`;
-                            }
-                        }
+                    title: {
+                        display: true,
+                        text: 'Percentual de Revisões vs Novos'
                     }
                 }
             }
@@ -550,18 +499,14 @@
     // Funções de Edição - tornar globais
     window.abrirModalEdicao = async function(id) {
         editingId = id;
-        
         try {
             const doc = await db.collection('projetosViarios').doc(id).get();
-            
             if (doc.exists) {
                 const data = doc.data();
-                
                 document.getElementById('editNomeVia').value = data.nomeVia;
                 document.getElementById('editData').value = data.data;
                 document.getElementById('editQuantidadePontos').value = data.quantidadePontos;
                 document.getElementById('editRevisao').checked = data.revisao;
-                
                 document.getElementById('editModal').style.display = 'flex';
             }
         } catch (error) {
@@ -581,7 +526,6 @@
         if (editForm) {
             editForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
                 if (!editingId) return;
                 
                 const dadosAtualizados = {
@@ -593,10 +537,8 @@
                 
                 try {
                     await db.collection('projetosViarios').doc(editingId).update(dadosAtualizados);
-                    
                     fecharModalEdicao();
                     await carregarDados();
-                    
                     alert('Registro atualizado com sucesso!');
                 } catch (error) {
                     console.error('Erro ao atualizar registro:', error);
@@ -606,28 +548,22 @@
         }
     });
 
-    // Exportar para Excel - tornar global
+    // Exportar para Excel - tornar global e RESTRITO A ADMIN
     window.exportarParaExcel = async function() {
+        // Verificação de segurança: Somente Admin
+        if (!isAdmin) {
+            alert('Acesso negado: Apenas administradores podem baixar o relatório compilado.');
+            return;
+        }
+
         try {
+            // Admin exporta sempre todos os dados
+            const snapshot = await db.collection('projetosViarios').get();
             let dados = [];
             
-            if (isAdmin) {
-                // Admin exporta todos os dados
-                const snapshot = await db.collection('projetosViarios').get();
-                
-                snapshot.forEach(doc => {
-                    dados.push(doc.data());
-                });
-            } else {
-                // Usuário exporta apenas seus dados
-                const snapshot = await db.collection('projetosViarios')
-                    .where('userId', '==', currentUser.uid)
-                    .get();
-                
-                snapshot.forEach(doc => {
-                    dados.push(doc.data());
-                });
-            }
+            snapshot.forEach(doc => {
+                dados.push(doc.data());
+            });
             
             if (dados.length === 0) {
                 alert('Não há dados para exportar!');
@@ -637,24 +573,15 @@
             // Ordenar por data
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
-            // Preparar dados para Excel
+            // Preparar dados para Excel (incluindo nome/email do projetista)
             const dadosExcel = dados.map(item => {
-                const linha = {
+                return {
+                    'Projetista': item.userEmail || 'Desconhecido',
                     'Nome da Via': item.nomeVia,
                     'Data': new Date(item.data).toLocaleDateString('pt-BR'),
                     'Quantidade de Pontos': item.quantidadePontos,
                     'Revisão': item.revisao ? 'Sim' : 'Não'
                 };
-                
-                // Admin vê o projetista
-                if (isAdmin) {
-                    return {
-                        'Projetista': item.userEmail,
-                        ...linha
-                    };
-                }
-                
-                return linha;
             });
             
             // Criar workbook
@@ -662,28 +589,19 @@
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             
             // Ajustar largura das colunas
-            if (isAdmin) {
-                ws['!cols'] = [
-                    { wch: 25 }, // Projetista
-                    { wch: 30 }, // Nome da Via
-                    { wch: 12 }, // Data
-                    { wch: 20 }, // Quantidade de Pontos
-                    { wch: 10 }  // Revisão
-                ];
-            } else {
-                ws['!cols'] = [
-                    { wch: 30 }, // Nome da Via
-                    { wch: 12 }, // Data
-                    { wch: 20 }, // Quantidade de Pontos
-                    { wch: 10 }  // Revisão
-                ];
-            }
+            ws['!cols'] = [
+                { wch: 30 }, // Projetista
+                { wch: 30 }, // Nome da Via
+                { wch: 12 }, // Data
+                { wch: 20 }, // Quantidade de Pontos
+                { wch: 10 }  // Revisão
+            ];
             
-            XLSX.utils.book_append_sheet(wb, ws, 'Projetos Viários');
+            XLSX.utils.book_append_sheet(wb, ws, 'Relatório Geral Viários');
             
             // Gerar e baixar arquivo
             const hoje = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(wb, `Projetos_Viarios_${hoje}.xlsx`);
+            XLSX.writeFile(wb, `Relatorio_Geral_Viarios_${hoje}.xlsx`);
             
         } catch (error) {
             console.error('Erro ao exportar:', error);

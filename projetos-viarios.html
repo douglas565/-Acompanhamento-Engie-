@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projetos Viários - Acompanhamento</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Bibliotecas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .user-info {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: #0b7dda;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        /* Esconder gráfico geral para não-admin */
+        .admin-only {
+            display: none;
+        }
+        
+        .table-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        
+        table tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .delete-btn:hover {
+            background: #da190b;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingScreen" class="loading">
+        Carregando...
+    </div>
+    
+    <div id="mainContent" class="container" style="display: none;">
+        <div class="header">
+            <h1>Projetos Viários - Acompanhamento</h1>
+            <div class="user-info">
+                <strong>Usuário:</strong> <span id="userName"></span>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Registrar Novo Projeto</h2>
+            <form id="viariosForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nomeVia">Nome da Via:</label>
+                        <input type="text" id="nomeVia" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data">Data:</label>
+                        <input type="date" id="data" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quantidadePontos">Quantidade de Pontos:</label>
+                        <input type="number" id="quantidadePontos" min="0" required>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="revisao">
+                        <label for="revisao">É Revisão do Projeto?</label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Adicionar Registro</button>
+                <button type="button" class="btn btn-secondary" onclick="exportarParaExcel()">Exportar para Excel</button>
+            </form>
+        </div>
+        
+        <div class="charts-section">
+            <!-- Gráfico Geral - Apenas Admin -->
+            <div id="graficoGeralContainer" class="chart-container admin-only">
+                <h3>📊 Produção Geral por Semana (Todos os Projetistas)</h3>
+                <canvas id="chartSemanalGeral"></canvas>
+            </div>
+            
+            <!-- Gráfico Individual - Todos os usuários -->
+            <div class="chart-container">
+                <h3>Minha Produção por Semana</h3>
+                <canvas id="chartSemanalIndividual"></canvas>
+            </div>
+            
+            <!-- Gráfico por Projetista - Apenas Admin -->
+            <div id="graficoProjetistaContainer" class="chart-container admin-only">
+                <h3>📊 Produção por Projetista (Total)</h3>
+                <canvas id="chartProjetista"></canvas>
+            </div>
+        </div>
+        
+        <div class="table-section">
+            <h3 id="tabelaTitulo">Meus Registros de Projetos Viários</h3>
+            <table id="tabelaViarios">
+                <thead>
+                    <tr id="tableHeader">
+                        <th>Nome da Via</th>
+                        <th>Data</th>
+                        <th>Pontos</th>
+                        <th>Revisão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="firebase-config.js"></script>
+    <script src="projetos-viarios.js"></script>
+</body>
+</html>

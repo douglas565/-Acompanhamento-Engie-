@@ -819,3 +819,37 @@ body {
         font-size: 0.85em;
     }
 }
+
+/* Fix para gráficos infinitos */
+.chart-container {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* Define uma altura fixa para o container do gráfico */
+    height: 400px; 
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-container canvas {
+    /* Força o canvas a respeitar o pai */
+    max-height: 320px !important;
+    width: 100% !important;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 350px;
+    }
+    .chart-container canvas {
+        max-height: 270px !important;
+    }
+}
+
+/* Garante que elementos admin-only fiquem ocultos por padrão */
+.admin-only {
+    display: none !important;
+}

@@ -4,7 +4,6 @@
     
     // Prevenir inicialização dupla
     if (window.viariosApp) {
-        console.log('App de Projetos Viários já inicializado');
         return;
     }
     window.viariosApp = true;
@@ -13,37 +12,42 @@
     let currentUser = null;
     let isAdmin = false;
     let db = null;
-    let chartSemanalGeral = null;
-    let chartSemanalIndividual = null;
-    let chartProjetista = null;
-    let chartRevisoes = null;
+    
+    // Armazenar instâncias dos gráficos para destruir corretamente e evitar bugs visuais
+    const chartInstances = {
+        semanalGeral: null,
+        semanalIndividual: null,
+        projetista: null,
+        revisoes: null,
+        finishedProjects: null
+    };
+    
     let editingId = null;
 
     // Inicialização com Firebase Auth
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
             currentUser = user;
-            // Esperar o DOM carregar
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', inicializarApp);
             } else {
                 inicializarApp();
             }
         } else {
-            // Redirecionar para login
             window.location.href = 'index.html';
         }
     });
     
-    // Sobrescrever a função updateDashboard do script-firebase.js
-    // Isso garante que nossa lógica de exibição de admin persista
+    // Sobrescrever a função updateDashboard do script-firebase.js com segurança
     if (typeof window.updateDashboard === 'function') {
         const originalUpdateDashboard = window.updateDashboard;
         window.updateDashboard = function() {
-            // Executa a original (que pode estar vazia ou fazer coisas da outra página)
-            if (originalUpdateDashboard) originalUpdateDashboard();
+            // Executa a original apenas se estivermos na dashboard principal para evitar erros
+            if (document.getElementById('mainScreen')) {
+                originalUpdateDashboard();
+            }
             
-            // Re-aplica a visibilidade dos elementos de admin nesta página
+            // Garante que os elementos de admin sejam mostrados nesta página
             if (isAdmin) {
                 mostrarElementosAdmin();
             }
@@ -55,23 +59,14 @@
         console.log("Inicializando App Viários...");
         db = firebase.firestore();
         
-        // Exibir nome do usuário
         const userNameEl = document.getElementById('userName');
         if(userNameEl) userNameEl.textContent = currentUser.email;
         
-        // Verificar se é admin e carregar dados
         await verificarAdmin();
-        
-        // Configurar data atual
         configurarDataAtual();
-        
-        // Configurar formulário
         setupFormulario();
-        
-        // Carregar dados (agora sabemos se é admin ou não)
         await carregarDados();
         
-        // Mostrar conteúdo
         const loadingScreen = document.getElementById('loadingScreen');
         const mainContent = document.getElementById('mainContent');
         if(loadingScreen) loadingScreen.style.display = 'none';
@@ -81,9 +76,12 @@
     // Função auxiliar para mostrar elementos de admin
     function mostrarElementosAdmin() {
         const idsAdmin = [
-            'graficoGeralContainer', 'graficoProjetistaContainer', 
-            'graficoRevisoesContainer', 'teamChartContainer', 
-            'monthlyChartContainer', 'projectTypeChartContainer', 
+            'graficoGeralContainer', 
+            'graficoProjetistaContainer', 
+            'graficoRevisoesContainer',
+            'teamChartContainer', 
+            'monthlyChartContainer', 
+            'projectTypeChartContainer', 
             'finishedProjectsChartCard'
         ];
         
@@ -91,14 +89,15 @@
             const el = document.getElementById(id);
             if (el) {
                 el.classList.remove('admin-only');
-                el.style.display = 'block'; // Forçar display block caso CSS esteja escondendo
+                // Garante display adequado para não quebrar layout
+                el.style.display = 'flex'; 
+                el.style.flexDirection = 'column';
             }
         });
         
         const tabelaTitulo = document.getElementById('tabelaTitulo');
         if(tabelaTitulo) tabelaTitulo.textContent = 'Todos os Registros de Projetos Viários';
         
-        // Adicionar coluna de projetista na tabela se ainda não existir
         const headerRow = document.getElementById('tableHeader');
         if (headerRow && !headerRow.querySelector('.th-projetista')) {
             const projetistaHeader = document.createElement('th');
@@ -108,21 +107,17 @@
         }
     }
 
-    // Verificar se usuário é administrador
     async function verificarAdmin() {
         try {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get(); // ATENÇÃO: Coleção 'users' conforme script-firebase.js
+            // Verifica na coleção 'users' se o role é admin
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
-                isAdmin = userData.role === 'admin'; // Verifica o campo 'role'
-                console.log("É Admin?", isAdmin);
+                isAdmin = userData.role === 'admin';
                 
                 if (isAdmin) {
                     mostrarElementosAdmin();
                 }
-            } else {
-                console.log("Documento de usuário não encontrado, assumindo não-admin.");
-                isAdmin = false;
             }
         } catch (error) {
             console.error('Erro ao verificar admin:', error);
@@ -130,7 +125,6 @@
         }
     }
 
-    // Configurar data atual
     function configurarDataAtual() {
         const dataInput = document.getElementById('data');
         if (dataInput) {
@@ -139,7 +133,6 @@
         }
     }
 
-    // Configurar o formulário
     function setupFormulario() {
         const form = document.getElementById('viariosForm');
         if (!form) return;
@@ -170,33 +163,25 @@
         });
     }
 
-    // Carregar dados do Firestore
     async function carregarDados() {
-        console.log("Carregando dados. Admin:", isAdmin);
         try {
             let dados = [];
             let snapshot;
             
             if (isAdmin) {
-                // Admin vê TUDO
+                // Admin carrega TODOS os dados
                 snapshot = await db.collection('projetosViarios').get();
             } else {
-                // Usuário vê SÓ O SEU
+                // Usuário carrega APENAS os seus
                 snapshot = await db.collection('projetosViarios')
                     .where('userId', '==', currentUser.uid)
                     .get();
             }
             
-            if (snapshot.empty) {
-                console.log("Nenhum documento encontrado.");
-            }
-
             snapshot.forEach(doc => {
                 dados.push({ id: doc.id, ...doc.data() });
             });
             
-            console.log(`Carregados ${dados.length} registros.`);
-
             // Ordenar por data (mais recente primeiro)
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
@@ -205,11 +190,9 @@
             
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
-            alert('Erro ao carregar dados. Verifique o console para mais detalhes.');
         }
     }
 
-    // Atualizar tabela
     function atualizarTabela(dados) {
         const tbody = document.querySelector('#tabelaViarios tbody');
         if (!tbody) return;
@@ -224,14 +207,23 @@
                 rowHTML += `<td>${item.userEmail || 'N/A'}</td>`;
             }
             
+            // Formatar data evitando problemas de fuso horário
+            let dataFormatada = item.data;
+            if (item.data && item.data.includes('-')) {
+                const parts = item.data.split('-');
+                if (parts.length === 3) {
+                    dataFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+            
             rowHTML += `
                 <td>${item.nomeVia}</td>
-                <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+                <td>${dataFormatada}</td>
                 <td>${item.quantidadePontos}</td>
                 <td>${item.revisao ? 'Sim' : 'Não'}</td>
                 <td>
-                    <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" onclick="abrirModalEdicao('${item.id}')">Editar</button>
-                    <button class="delete-btn" onclick="excluirRegistro('${item.id}')">Excluir</button>
+                    <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" onclick="window.abrirModalEdicao('${item.id}')">Editar</button>
+                    <button class="delete-btn" onclick="window.excluirRegistro('${item.id}')">Excluir</button>
                 </td>
             `;
             
@@ -240,13 +232,12 @@
         });
     }
 
-    // Excluir registro - Tornar global para o onclick
+    // Tornar função global para o onclick do HTML
     window.excluirRegistro = async function(id) {
         if (confirm('Tem certeza que deseja excluir este registro?')) {
             try {
                 await db.collection('projetosViarios').doc(id).delete();
                 await carregarDados();
-                alert('Registro excluído com sucesso!');
             } catch (error) {
                 console.error('Erro ao excluir:', error);
                 alert('Erro ao excluir registro.');
@@ -254,11 +245,10 @@
         }
     };
 
-    // Função para obter número da semana
     function getWeekNumber(date) {
-        if(!date) return 'Data Inválida';
+        if(!date) return 'Semana N/A';
         const d = new Date(date);
-        // Ajuste para garantir que a data é interpretada corretamente (evita problemas de timezone)
+        // Ajuste de timezone
         const userTimezoneOffset = d.getTimezoneOffset() * 60000;
         const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
         
@@ -269,9 +259,8 @@
         return `Sem ${weekNo}`;
     }
 
-    // Gerar cor baseada numa string
     function stringToColor(str) {
-        if (!str) return '#CCCCCC'; // Cor padrão cinza se str for undefined/null
+        if (!str) return '#CCCCCC';
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -280,22 +269,31 @@
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
-    // Atualizar todos os gráficos
+    // Função de segurança para carregar plugins apenas se existirem
+    function getPlugins() {
+        const plugins = [];
+        if (typeof ChartDataLabels !== 'undefined') {
+            plugins.push(ChartDataLabels);
+        }
+        return plugins;
+    }
+
     async function atualizarGraficos(dados) {
+        if (typeof Chart === 'undefined') return;
+
         // Gráfico individual (sempre visível)
         const dadosIndividuais = dados.filter(item => item.userId === currentUser.uid);
         atualizarGraficoSemanalIndividual(dadosIndividuais);
         
         // Gráficos gerais (apenas admin)
         if (isAdmin) {
-            console.log("Atualizando gráficos de Admin...");
             atualizarGraficoSemanalGeral(dados);
             atualizarGraficoProjetista(dados);
             atualizarGraficoRevisoes(dados);
         }
     }
 
-    // Gráfico semanal individual
+    // 1. Gráfico Semanal Individual
     function atualizarGraficoSemanalIndividual(dados) {
         const canvas = document.getElementById('chartSemanalIndividual');
         if (!canvas) return;
@@ -310,18 +308,17 @@
         const semanas = Object.keys(dadosPorSemana).sort();
         const valores = semanas.map(sem => dadosPorSemana[sem]);
         
-        const ctx = canvas.getContext('2d');
-        
-        if (chartSemanalIndividual) {
-            chartSemanalIndividual.destroy();
+        // Destruir gráfico anterior para evitar sobreposição/memória
+        if (chartInstances.semanalIndividual) {
+            chartInstances.semanalIndividual.destroy();
         }
         
-        chartSemanalIndividual = new Chart(ctx, {
+        chartInstances.semanalIndividual = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: semanas.length > 0 ? semanas : ['Sem dados'],
                 datasets: [{
-                    label: 'Meus Pontos por Semana',
+                    label: 'Meus Pontos',
                     data: valores.length > 0 ? valores : [0],
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
@@ -330,30 +327,26 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false, // Importante para não crescer infinitamente
                 scales: { y: { beginAtZero: true } },
                 plugins: {
-                    datalabels: { // Configuração segura caso o plugin exista
+                    datalabels: {
                         display: true,
                         color: 'black',
                         anchor: 'end',
-                        align: 'top',
-                        formatter: Math.round
+                        align: 'top'
                     }
                 }
-            }
+            },
+            plugins: getPlugins()
         });
     }
 
-    // Gráfico semanal geral (apenas admin) - ATUALIZADO PARA BARRAS EMPILHADAS POR USUÁRIO
+    // 2. Gráfico Geral Semanal (Barras Empilhadas por Usuário) - Admin
     function atualizarGraficoSemanalGeral(dados) {
         const canvas = document.getElementById('chartSemanalGeral');
-        if (!canvas) {
-            console.warn("Canvas chartSemanalGeral não encontrado!");
-            return;
-        }
+        if (!canvas) return;
         
-        // 1. Organizar dados: Semana -> Usuário -> Pontos
         const dadosAgrupados = {};
         const todasSemanas = new Set();
         const todosUsuarios = new Set();
@@ -361,23 +354,17 @@
         dados.forEach(item => {
             const semana = getWeekNumber(item.data);
             const usuario = item.userEmail || 'Desconhecido';
-            
             todasSemanas.add(semana);
             todosUsuarios.add(usuario);
 
             if (!dadosAgrupados[semana]) dadosAgrupados[semana] = {};
             if (!dadosAgrupados[semana][usuario]) dadosAgrupados[semana][usuario] = 0;
-            
             dadosAgrupados[semana][usuario] += item.quantidadePontos;
         });
 
         const semanasOrdenadas = Array.from(todasSemanas).sort();
         const listaUsuarios = Array.from(todosUsuarios);
 
-        console.log("Semanas:", semanasOrdenadas);
-        console.log("Usuários:", listaUsuarios);
-
-        // 2. Criar datasets (um por usuário)
         const datasets = listaUsuarios.map(usuario => {
             const pontosPorSemana = semanasOrdenadas.map(semana => {
                 return dadosAgrupados[semana]?.[usuario] || 0;
@@ -386,18 +373,16 @@
             return {
                 label: usuario,
                 data: pontosPorSemana,
-                backgroundColor: stringToColor(usuario), // Cor única por usuário
-                stack: 'Semana' // Agrupa na mesma barra
+                backgroundColor: stringToColor(usuario),
+                stack: 'Semana'
             };
         });
         
-        const ctx = canvas.getContext('2d');
-        
-        if (chartSemanalGeral) {
-            chartSemanalGeral.destroy();
+        if (chartInstances.semanalGeral) {
+            chartInstances.semanalGeral.destroy();
         }
         
-        chartSemanalGeral = new Chart(ctx, {
+        chartInstances.semanalGeral = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: semanasOrdenadas.length > 0 ? semanasOrdenadas : ['Sem dados'],
@@ -405,46 +390,33 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    title: {
-                        display: true,
-                        text: 'Produção Semanal Geral (Pontos por Usuário)'
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    datalabels: { // Exibir valores dentro das barras
+                    title: { display: true, text: 'Produção Semanal (Por Usuário)' },
+                    tooltip: { mode: 'index', intersect: false },
+                    legend: { position: 'bottom' },
+                    datalabels: {
                         color: '#fff',
                         font: { weight: 'bold' },
-                        formatter: (value) => value > 0 ? value : '', // Só mostra se > 0
+                        formatter: (value) => value > 0 ? value : '',
                         display: true
                     }
                 },
                 scales: {
-                    x: {
-                        stacked: true,
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true
-                    }
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
                 }
-            }
+            },
+            plugins: getPlugins()
         });
     }
 
-    // Gráfico por projetista (apenas admin)
+    // 3. Gráfico por Projetista (Admin)
     function atualizarGraficoProjetista(dados) {
         const canvas = document.getElementById('chartProjetista');
         if (!canvas) return;
         
         const dadosPorProjetista = {};
-        
         dados.forEach(item => {
             const email = item.userEmail || 'Sem email';
             dadosPorProjetista[email] = (dadosPorProjetista[email] || 0) + item.quantidadePontos;
@@ -453,31 +425,27 @@
         const projetistas = Object.keys(dadosPorProjetista);
         const valores = projetistas.map(proj => dadosPorProjetista[proj]);
         
-        const ctx = canvas.getContext('2d');
-        
-        if (chartProjetista) {
-            chartProjetista.destroy();
+        if (chartInstances.projetista) {
+            chartInstances.projetista.destroy();
         }
         
-        // Cores variadas
-        const bgColors = projetistas.map(p => stringToColor(p));
-        
-        chartProjetista = new Chart(ctx, {
+        chartInstances.projetista = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: projetistas.length > 0 ? projetistas : ['Sem dados'],
                 datasets: [{
                     label: 'Pontos Totais',
                     data: valores.length > 0 ? valores : [0],
-                    backgroundColor: bgColors,
+                    backgroundColor: projetistas.map(p => stringToColor(p)),
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true } },
                 plugins: {
+                    legend: { display: false },
                     datalabels: {
                         color: 'black',
                         anchor: 'end',
@@ -485,11 +453,12 @@
                         formatter: Math.round
                     }
                 }
-            }
+            },
+            plugins: getPlugins()
         });
     }
 
-    // Gráfico de Revisões (apenas admin) - PERCENTUAL
+    // 4. Gráfico de Revisões (Percentual) - Admin
     function atualizarGraficoRevisoes(dados) {
         const canvas = document.getElementById('chartRevisoes');
         if (!canvas) return;
@@ -498,24 +467,19 @@
         let totalNovos = 0;
         
         dados.forEach(item => {
-            if (item.revisao) {
-                totalRevisoes++;
-            } else {
-                totalNovos++;
-            }
+            if (item.revisao) totalRevisoes++;
+            else totalNovos++;
         });
         
         const total = totalRevisoes + totalNovos;
         const percentRevisoes = total > 0 ? ((totalRevisoes / total) * 100).toFixed(1) : 0;
         const percentNovos = total > 0 ? ((totalNovos / total) * 100).toFixed(1) : 0;
         
-        const ctx = canvas.getContext('2d');
-        
-        if (chartRevisoes) {
-            chartRevisoes.destroy();
+        if (chartInstances.revisoes) {
+            chartInstances.revisoes.destroy();
         }
         
-        chartRevisoes = new Chart(ctx, {
+        chartInstances.revisoes = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: [
@@ -524,47 +488,34 @@
                 ],
                 datasets: [{
                     data: [totalRevisoes, totalNovos],
-                    backgroundColor: [
-                        'rgba(255, 159, 64, 0.8)', // Cor Revisão (Laranja)
-                        'rgba(75, 192, 192, 0.8)'  // Cor Novo (Verde Água)
-                    ],
-                    borderColor: [
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(75, 192, 192, 1)'
-                    ],
-                    borderWidth: 2
+                    backgroundColor: ['#FF9F40', '#4BC0C0'],
+                    borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Percentual de Revisões vs Novos'
-                    },
+                    legend: { position: 'bottom' },
+                    title: { display: true, text: 'Percentual de Revisões vs Novos' },
                     datalabels: {
                         color: '#fff',
                         font: { weight: 'bold' },
                         formatter: (value, ctx) => {
                             let sum = 0;
                             let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => {
-                                sum += data;
-                            });
-                            let percentage = (value * 100 / sum).toFixed(1) + "%";
-                            return percentage;
+                            dataArr.map(data => { sum += data; });
+                            if (sum === 0) return "0%";
+                            return (value * 100 / sum).toFixed(1) + "%";
                         }
                     }
                 }
-            }
+            },
+            plugins: getPlugins()
         });
     }
 
-    // Funções de Edição - tornar globais
+    // Funções de Edição
     window.abrirModalEdicao = async function(id) {
         editingId = id;
         try {
@@ -578,8 +529,7 @@
                 document.getElementById('editModal').style.display = 'flex';
             }
         } catch (error) {
-            console.error('Erro ao carregar dados para edição:', error);
-            alert('Erro ao carregar dados.');
+            console.error('Erro ao carregar dados:', error);
         }
     };
     
@@ -588,7 +538,6 @@
         editingId = null;
     };
     
-    // Configurar formulário de edição
     document.addEventListener('DOMContentLoaded', function() {
         const editForm = document.getElementById('editForm');
         if (editForm) {
@@ -605,69 +554,56 @@
                 
                 try {
                     await db.collection('projetosViarios').doc(editingId).update(dadosAtualizados);
-                    fecharModalEdicao();
+                    window.fecharModalEdicao();
                     await carregarDados();
                     alert('Registro atualizado com sucesso!');
                 } catch (error) {
-                    console.error('Erro ao atualizar registro:', error);
-                    alert('Erro ao atualizar registro. Tente novamente.');
+                    console.error('Erro ao atualizar:', error);
                 }
             });
         }
     });
 
-    // Exportar para Excel - tornar global e RESTRITO A ADMIN
+    // Exportar Excel (Apenas Admin)
     window.exportarParaExcel = async function() {
-        // Verificação de segurança: Somente Admin
         if (!isAdmin) {
-            alert('Acesso negado: Apenas administradores podem baixar o relatório compilado.');
+            alert('Acesso negado: Apenas administradores podem baixar o relatório.');
             return;
         }
 
         try {
-            // Admin exporta sempre todos os dados
             const snapshot = await db.collection('projetosViarios').get();
             let dados = [];
             
-            snapshot.forEach(doc => {
-                dados.push(doc.data());
-            });
+            snapshot.forEach(doc => dados.push(doc.data()));
             
             if (dados.length === 0) {
                 alert('Não há dados para exportar!');
                 return;
             }
             
-            // Ordenar por data
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
-            // Preparar dados para Excel (incluindo nome/email do projetista)
-            const dadosExcel = dados.map(item => {
-                return {
-                    'Projetista': item.userEmail || 'Desconhecido',
-                    'Nome da Via': item.nomeVia,
-                    'Data': new Date(item.data).toLocaleDateString('pt-BR'),
-                    'Quantidade de Pontos': item.quantidadePontos,
-                    'Revisão': item.revisao ? 'Sim' : 'Não'
-                };
-            });
+            const dadosExcel = dados.map(item => ({
+                'Projetista': item.userEmail || 'Desconhecido',
+                'Nome da Via': item.nomeVia,
+                'Data': new Date(item.data).toLocaleDateString('pt-BR'),
+                'Quantidade de Pontos': item.quantidadePontos,
+                'Revisão': item.revisao ? 'Sim' : 'Não'
+            }));
             
-            // Criar workbook
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             
-            // Ajustar largura das colunas
             ws['!cols'] = [
-                { wch: 30 }, // Projetista
-                { wch: 30 }, // Nome da Via
-                { wch: 12 }, // Data
-                { wch: 20 }, // Quantidade de Pontos
-                { wch: 10 }  // Revisão
+                { wch: 30 }, 
+                { wch: 30 }, 
+                { wch: 15 }, 
+                { wch: 10 }, 
+                { wch: 10 }
             ];
             
             XLSX.utils.book_append_sheet(wb, ws, 'Relatório Geral Viários');
-            
-            // Gerar e baixar arquivo
             const hoje = new Date().toISOString().split('T')[0];
             XLSX.writeFile(wb, `Relatorio_Geral_Viarios_${hoje}.xlsx`);
             

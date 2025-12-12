@@ -23,7 +23,7 @@ function initializeApp() {
     setupAuthListener();
     setupFormListener();
     setupKeyboardEvents();
-    setupChartResize(); // Adicionar esta linha
+    setupChartResize(); 
     
     // Verificar se já existe usuário logado
     auth.onAuthStateChanged((user) => {
@@ -78,7 +78,7 @@ function showMainScreen() {
     if (loginScreen) loginScreen.classList.add('hidden');
     if (mainScreen) mainScreen.classList.remove('hidden');
     
-    // CORREÇÃO: Verifica se os elementos de Admin existem antes de acessar classList
+    // Verifica se os elementos de Admin existem antes de aceder classList
     const adminPanel = document.getElementById('adminPanel');
     const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
 
@@ -147,7 +147,7 @@ async function handleUserLogin(user) {
     // Carregar dados do usuário
     await loadUserData(user.uid);
     
-    // CORREÇÃO: Verifica se os elementos existem antes de tentar alterá-los
+    // Verifica se os elementos existem antes de tentar alterá-los
     const currentUserEl = document.getElementById('currentUser');
     const userRoleEl = document.getElementById('userRole');
     
@@ -176,12 +176,17 @@ async function logoutUser() {
         clearAllCharts();
         
         // Ocultar elementos de admin ao sair
-        document.getElementById('adminPanel').classList.add('hidden');
-        document.getElementById('finishedProjectsChartCard').classList.add('hidden');
+        const adminPanel = document.getElementById('adminPanel');
+        const finishedProjectsChartCard = document.getElementById('finishedProjectsChartCard');
+        
+        if(adminPanel) adminPanel.classList.add('hidden');
+        if(finishedProjectsChartCard) finishedProjectsChartCard.classList.add('hidden');
 
         // Limpar formulários
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
+        const emailInput = document.getElementById('loginEmail');
+        const passInput = document.getElementById('loginPassword');
+        if(emailInput) emailInput.value = '';
+        if(passInput) passInput.value = '';
         
         showLoginScreen();
         
@@ -190,6 +195,7 @@ async function logoutUser() {
         showError('Erro ao fazer logout');
     }
 }
+
 // Carregar dados do usuário
 async function loadUserData(uid) {
     try {
@@ -216,12 +222,11 @@ async function loadUserData(uid) {
     }
 }
 
-
 function waitForChart(){
     if (typeof Chart !== 'undefined'){
         updateCharts();
     }else{
-        seyTimeout(waitForChart, 100);
+        setTimeout(waitForChart, 100);
     }
 }
 
@@ -248,68 +253,9 @@ async function loadAllData() {
                 ...doc.data()
             }));
         }
-        // Adicionar dados de demonstração se não houver produções
-if (allProductions.length === 0) {
-    console.log('Adicionando dados de demonstração para gráficos...');
-    allProductions = [
-        {
-            id: 'demo1',
-            userId: currentUser.uid,
-            userEmail: currentUserData.email,
-            userName: currentUserData.name,
-            team: 'Curitiba',
-            date: '2025-08-15',
-            plaza: 'Praça Teste 1',
-            projectType: 'Projeto Demo 1',
-            status: 'finalizado',
-            points: { retrofit1: 10, retrofit2: 5, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 0 },
-            total: 15,
-            createdAt: new Date('2025-08-15T10:00:00Z')
-        },
-        {
-            id: 'demo2',
-            userId: 'other_user_id',
-            userEmail: 'joao@sistema.com',
-            userName: 'João',
-            team: 'Florianópolis',
-            date: '2025-08-16',
-            plaza: 'Praça Teste 1', // DUPLICADO
-            projectType: 'Projeto Demo 2',
-            status: 'em_andamento',
-            points: { retrofit1: 0, retrofit2: 0, retrofit3: 8, retrofit4: 7, remodelagemV: 0, remodelagemD: 0 },
-            total: 15,
-            createdAt: new Date('2025-08-16T11:00:00Z')
-        },
-        {
-            id: 'demo3',
-            userId: currentUser.uid,
-            userEmail: currentUserData.email,
-            userName: currentUserData.name,
-            team: 'Curitiba',
-            date: '2025-08-17',
-            plaza: 'Praça Teste 3',
-            projectType: 'Projeto Demo 3',
-            status: 'em_andamento',
-            points: { retrofit1: 12, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 5, remodelagemD: 0 },
-            total: 17,
-            createdAt: new Date('2025-08-17T12:00:00Z')
-        },
-        {
-            id: 'demo4',
-            userId: 'other_user_id',
-            userEmail: 'joao@sistema.com',
-            userName: 'João',
-            team: 'Florianópolis',
-            date: '2025-08-18',
-            plaza: 'Praça Teste 4',
-            projectType: 'Projeto Demo 4',
-            status: 'finalizado',
-            points: { retrofit1: 0, retrofit2: 0, retrofit3: 0, retrofit4: 0, remodelagemV: 0, remodelagemD: 10 },
-            total: 10,
-            createdAt: new Date('2025-08-18T13:00:00Z')
-        }
-    ];
-}
+        
+        // Dados de demonstração removidos para limpar o código, 
+        // já que o sistema está em produção/teste real
         
         updateConnectionStatus('connected', 'Conectado ao Firebase');
         
@@ -430,7 +376,6 @@ function setupFormListener() {
 }
 
 // Salvar produção
-// VERSÃO CORRIGIDA DA FUNÇÃO handleProductionSubmit
 async function handleProductionSubmit(e) {
     e.preventDefault();
     
@@ -442,7 +387,7 @@ async function handleProductionSubmit(e) {
     // Declarar elementos do formulário
     const projectDateEl = document.getElementById('projectDate');
     const plazaEl = document.getElementById('plaza');
-    const projectTypeEl = document.getElementById('projectType');
+    const projectTypeEl = document.getElementById('projectType'); // Nota: no HTML parece não haver id="projectType", mas sim "projectNumber". Ajustar se necessário.
     const projectStatusEl = document.getElementById('projectStatus');
     
     if (!projectDateEl) {
@@ -474,7 +419,6 @@ async function handleProductionSubmit(e) {
         console.log('🎉 Projeto será finalizado automaticamente - todas as categorias obrigatórias foram concluídas!');
     }
 
-    // ✅ Definir pontos e total antes do objeto production
     const points = {
         retrofit1: parseInt(document.getElementById('retrofit1')?.value) || 0,
         retrofit2: parseInt(document.getElementById('retrofit2')?.value) || 0,
@@ -497,7 +441,7 @@ async function handleProductionSubmit(e) {
             date: projectDateEl.value || new Date().toISOString().split('T')[0],
             projectNumber: document.getElementById('projectNumber')?.value.trim() || 'N/A',
             plaza: plazaEl?.value || 'N/A',
-            projectType: projectTypeEl?.value || 'N/A',
+            projectType: projectTypeEl?.value || 'N/A', // Verifique se este campo existe no HTML
             status: statusProjeto,
             categories: categories,
             points: points,
@@ -543,47 +487,11 @@ async function handleProductionSubmit(e) {
     }
 }
 
-
-// FUNÇÃO ADICIONAL PARA VERIFICAR SE TODOS OS ELEMENTOS EXISTEM
-function debugFormElements() {
-    console.log('=== DEBUG DOS ELEMENTOS DO FORMULÁRIO ===');
-    
-    const elementsToCheck = [
-        'projectDate',
-        'plaza', 
-        'projectType',
-        'projectStatus',
-        'categoryLuminotecnico',
-        'categoryEletrico', 
-        'categoryPlanilhao',
-        'categoryCroqui',
-        'retrofit1',
-        'retrofit2',
-        'retrofit3', 
-        'retrofit4',
-        'remodelagemV',
-        'remodelagemD',
-        'totalPoints'
-    ];
-    
-    elementsToCheck.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            console.log(`✅ ${id}: encontrado`);
-        } else {
-            console.error(`❌ ${id}: NÃO ENCONTRADO`);
-        }
-    });
-    
-    console.log('=== FIM DO DEBUG ===');
-}
-
 // Função para mostrar mensagem de sucesso
 function showSuccess(message) {
-    // Criar elemento de sucesso temporário
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message';
-    successDiv.innerHTML = message.replace(/\n/g, '<br>'); // Permitir quebras de linha
+    successDiv.innerHTML = message.replace(/\n/g, '<br>');
     successDiv.style.cssText = `
         position: fixed;
         top: 20px;
@@ -639,26 +547,22 @@ function updateStats() {
         return p.status === 'finalizado' && categoriasObrigatorias;
     });
 
-    // Pontos hoje (mantém a lógica original, mas pode ser ajustada se necessário)
     const todayPoints = userProductions
         .filter(p => p.date === today)
         .reduce((sum, p) => sum + p.total, 0);
     
-    // Pontos do mês (mantém a lógica original, mas pode ser ajustada se necessário)
     const monthPoints = userProductions
         .filter(p => p.date && p.date.startsWith(currentMonth))
         .reduce((sum, p) => sum + p.total, 0);
     
-    // Média diária (mantém a lógica original, mas pode ser ajustada se necessário)
     const daysWithProduction = [...new Set(userProductions.map(p => p.date))].length;
     const avgPoints = daysWithProduction > 0 ? Math.round(monthPoints / daysWithProduction) : 0;
     
-    // Atualizar elementos
     const elements = {
         'totalPointsToday': todayPoints,
         'totalPointsMonth': monthPoints,
         'avgPointsDay': avgPoints,
-        'totalProjects': filteredForNewLogic.length // Usar a nova lógica aqui
+        'totalProjects': filteredForNewLogic.length
     };
     
     Object.entries(elements).forEach(([id, value]) => {
@@ -669,25 +573,19 @@ function updateStats() {
 
 // Função melhorada para atualizar todos os gráficos
 function updateCharts() {
-
-    console.log('updateCharts() chamada, dados disponíveis:', allProductions.length);
-
     if (typeof Chart === 'undefined') {
         console.error('Chart.js não está carregado!');
         return;
     }
 
-    // Verificar se temos dados
     if (!allProductions || allProductions.length === 0) {
         console.log('Nenhum dado de produção disponível para gráficos');
         return;
     }
     
     console.log('Iniciando renderização dos gráficos...');
-    // Inicializar wrappers se necessário
     initializeChartWrappers();
     
-    // Pequeno delay para garantir que os elementos DOM estejam prontos
     setTimeout(() => {
         try {
             updateTeamChart();
@@ -707,7 +605,6 @@ function updateCharts() {
             console.error('Erro ao atualizar gráfico de tipos de projeto:', error);
         }
 
-        // Novo gráfico para admins
         if (currentUserData && currentUserData.role === 'admin') {
             try {
                 updateFinishedProjectsChart();
@@ -718,7 +615,6 @@ function updateCharts() {
     }, 100);
 }
 
-// Função para inicializar os wrappers dos gráficos
 function initializeChartWrappers() {
     const chartCanvases = document.querySelectorAll('.chart-card canvas');
     chartCanvases.forEach(canvas => {
@@ -731,7 +627,6 @@ function initializeChartWrappers() {
     });
 }
 
-// Função para limpar todos os gráficos
 function clearAllCharts() {
     Object.values(charts).forEach(chart => {
         if (chart && typeof chart.destroy === 'function') {
@@ -745,7 +640,6 @@ function clearAllCharts() {
     charts = {};
 }
 
-// Função para redimensionar gráficos quando a janela muda de tamanho
 function setupChartResize() {
     let resizeTimer;
     window.addEventListener('resize', () => {
@@ -760,31 +654,25 @@ function setupChartResize() {
     });
 }
 
-// Função corrigida para gráfico de equipes
+// *** FUNÇÃO CORRIGIDA PARA GRÁFICO DE EQUIPES ***
 function updateTeamChart() {
     const ctx = document.getElementById('teamChart');
     const teamChartCard = ctx ? ctx.closest('.chart-card') : null;
 
-    // 1. Verificação de permissão (Admin)
     if (!currentUserData || currentUserData.role !== 'admin') {
         if (teamChartCard) teamChartCard.style.display = 'none';
-        return; // Sai da função sem renderizar nada
+        return; 
     } else {
-        if (teamChartCard) teamChartCard.style.display = ''; // Mostra se for admin
+        if (teamChartCard) teamChartCard.style.display = ''; 
     }
     
-    if (!ctx) {
-        console.warn('Canvas teamChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
     
-    // 2. Destruir gráfico anterior para evitar sobreposição
     if (charts.team) {
         charts.team.destroy();
         charts.team = null;
     }
     
-    // 3. Calcular dados
     const curitibaPoints = allProductions
         .filter(p => p.team === 'Curitiba')
         .reduce((sum, p) => sum + p.total, 0);
@@ -793,9 +681,6 @@ function updateTeamChart() {
         .filter(p => p.team === 'Florianópolis')
         .reduce((sum, p) => sum + p.total, 0);
     
-    console.log('Dados do gráfico de equipes:', { curitibaPoints, florianopolisPoints });
-    
-    // 4. Verificar se há dados para exibir
     if (curitibaPoints === 0 && florianopolisPoints === 0) {
         const context = ctx.getContext('2d');
         context.clearRect(0, 0, ctx.width, ctx.height);
@@ -806,8 +691,7 @@ function updateTeamChart() {
         return;
     }
 
-    // 5. CONFIGURAÇÃO SEGURA DO PLUGIN (A CORREÇÃO PRINCIPAL)
-    // Cria uma lista e só adiciona o plugin se ele estiver definido no navegador
+    // --- CORREÇÃO DE SEGURANÇA: Verifica se o plugin existe ---
     const pluginsList = [];
     if (typeof ChartDataLabels !== 'undefined') {
         pluginsList.push(ChartDataLabels);
@@ -820,14 +704,8 @@ function updateTeamChart() {
                 labels: ['Curitiba', 'Florianópolis'],
                 datasets: [{
                     data: [curitibaPoints, florianopolisPoints],
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(118, 75, 162, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(102, 126, 234, 1)',
-                        'rgba(118, 75, 162, 1)'
-                    ],
+                    backgroundColor: ['rgba(102, 126, 234, 0.8)', 'rgba(118, 75, 162, 0.8)'],
+                    borderColor: ['rgba(102, 126, 234, 1)', 'rgba(118, 75, 162, 1)'],
                     borderWidth: 2,
                     hoverOffset: 4
                 }]
@@ -836,74 +714,32 @@ function updateTeamChart() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            font: {
-                                size: 14
-                            }
-                        }
-                    },
-                    // Configuração dos rótulos (só aparece se o plugin carregar)
+                    legend: { position: 'bottom' },
                     datalabels: {
                         color: '#fff',
-                        font: {
-                            weight: 'bold',
-                            size: 16
-                        },
-                        formatter: function(value, context) {
-                            return value; // Mostrar valores reais
-                        },
-                        anchor: 'center',
-                        align: 'center',
-                        offset: 0,
-                        clamp: true,
-                        display: function(context) {
-                            return context.dataset.data[context.dataIndex] > 0; // Esconde se for zero
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        cornerRadius: 6,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
-                                return `${context.label}: ${context.raw} pontos (${percentage}%)`;
-                            }
-                        }
+                        font: { weight: 'bold', size: 16 },
+                        formatter: (value) => value,
+                        display: (context) => context.dataset.data[context.dataIndex] > 0
                     }
                 }
             },
-            // Usa a lista segura criada no passo 5
-            plugins: pluginsList
+            plugins: pluginsList // Usa lista segura
         });
-        console.log('Gráfico de equipes criado com sucesso');
     } catch (error) {
         console.error('Erro ao criar gráfico de equipes:', error);
     }
 }
 
-// Função corrigida para gráfico mensal
+// Função para gráfico mensal
 function updateMonthlyChart() {
     const ctx = document.getElementById("monthlyChart");
-    if (!ctx) {
-        console.warn("Canvas monthlyChart não encontrado");
-        return;
-    }
+    if (!ctx) return;
 
-    // Destruir gráfico anterior
     if (charts.monthly) {
         charts.monthly.destroy();
         charts.monthly = null;
     }
 
-    // Agrupar por semana
     const weeklyData = {};
     const relevantProductions = currentUserData && currentUserData.role === "admin" 
         ? allProductions 
@@ -911,19 +747,17 @@ function updateMonthlyChart() {
     
     relevantProductions.forEach(p => {
         if (p.date) {
-            const date = new Date(p.date + "T00:00:00"); // Adiciona T00:00:00 para evitar problemas de fuso horário
-            const day = date.getDay(); // 0 = Domingo, 6 = Sábado
-            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para segunda-feira da semana
+            const date = new Date(p.date + "T00:00:00"); 
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
             const monday = new Date(date.setDate(diff));
-            const weekKey = monday.toISOString().substring(0, 10); // Formato YYYY-MM-DD para a segunda-feira da semana
+            const weekKey = monday.toISOString().substring(0, 10);
             weeklyData[weekKey] = (weeklyData[weekKey] || 0) + p.total;
         }
     });
     
     const weeks = Object.keys(weeklyData).sort();
     const values = weeks.map(w => weeklyData[w]);
-    
-    console.log("Dados do gráfico semanal:", { weeks, values });
     
     if (weeks.length === 0) {
         const context = ctx.getContext("2d");
@@ -956,14 +790,9 @@ function updateMonthlyChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: "index"
-                },
-
+                interaction: { intersect: false, mode: "index" },
                 onClick: (evt, elements) => {
                     if (currentUserData && currentUserData.role !== "admin") {
-                        // Se não for admin, não faz nada
                         showError("Apenas administradores podem visualizar detalhes da semana");
                         return;
                     }
@@ -973,66 +802,31 @@ function updateMonthlyChart() {
                         showWeeklyDetails(weekKey);
                     }
                 },
-                
-
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
-                        backgroundColor: "rgba(0,0,0,0.8)",
-                        titleColor: "#fff",
-                        bodyColor: "#fff",
-                        cornerRadius: 6,
                         callbacks: {
-                            title: function(tooltipItems) {
-                                return `Semana: ${tooltipItems[0].label}`;
-                            },
-                            label: function(context) {
-                                return `Pontos: ${context.raw}`;
-                            }
+                            title: (tooltipItems) => `Semana: ${tooltipItems[0].label}`,
+                            label: (context) => `Pontos: ${context.raw}`
                         }
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 10,
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            color: "rgba(0,0,0,0.1)"
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
+                    y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.1)" } },
+                    x: { grid: { display: false } }
                 }
             }
         });
-        console.log("Gráfico semanal criado com sucesso");
     } catch (error) {
         console.error("Erro ao criar gráfico mensal:", error);
     }
 }
 
 function showWeeklyDetails(weekKey) {
-    // Calcular início e fim da semana
     const start = new Date(weekKey + "T00:00:00");
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
-    // Filtrar produções daquela semana
     const weeklyProductions = allProductions.filter(p => {
         const date = new Date(p.date + "T00:00:00");
         return date >= start && date <= end;
@@ -1043,7 +837,6 @@ function showWeeklyDetails(weekKey) {
         return;
     }
 
-    // Agrupar por usuário e calcular apenas os totais
     const groupedByUser = {};
     weeklyProductions.forEach(p => {
         const user = p.userName || p.userEmail;
@@ -1061,7 +854,6 @@ function showWeeklyDetails(weekKey) {
         <div class="modal-body">
     `;
     
-    // Mostrar apenas nome do usuário e total de pontos
     for (const user in groupedByUser) {
         const userTotalPoints = groupedByUser[user];
         detailsHtml += `<p><strong>${user}: ${userTotalPoints} pontos</strong></p>`;
@@ -1069,40 +861,29 @@ function showWeeklyDetails(weekKey) {
     
     detailsHtml += `</div>`;
 
-    // Mostrar em modal ou div
     const detailsDiv = document.getElementById("weeklyDetails");
     if (detailsDiv) {
         detailsDiv.innerHTML = detailsHtml;
         detailsDiv.classList.remove("hidden");
-        detailsDiv.style.display = "block"; // Garante que o modal seja exibido como bloco
+        detailsDiv.style.display = "block";
     } else {
         alert(detailsHtml.replace(/<[^>]+>/g, ""));
     }
 }
 
-
-// Função corrigida para gráfico de tipos de projeto
+// *** FUNÇÃO CORRIGIDA PARA GRÁFICO DE TIPOS ***
 function updateProjectTypeChart() {
     const ctx = document.getElementById('projectTypeChart');
-    if (!ctx) {
-        console.warn('Canvas projectTypeChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
     
-    // Destruir gráfico anterior
     if (charts.projectType) {
         charts.projectType.destroy();
         charts.projectType = null;
     }
     
-    // Agrupar por tipo de ponto
     const typeData = {
-        'Retrofit 1': 0,
-        'Retrofit 2': 0,
-        'Retrofit 3': 0,
-        'Retrofit 4': 0,
-        'Remodelamento V': 0,
-        'Remodelamento D': 0
+        'Retrofit 1': 0, 'Retrofit 2': 0, 'Retrofit 3': 0, 
+        'Retrofit 4': 0, 'Remodelamento V': 0, 'Remodelamento D': 0
     };
     
     const relevantProductions = currentUserData && currentUserData.role === 'admin' 
@@ -1120,10 +901,7 @@ function updateProjectTypeChart() {
         }
     });
     
-    // Filtrar apenas tipos com dados
     const filteredTypes = Object.entries(typeData).filter(([key, value]) => value > 0);
-    
-    console.log('Dados do gráfico de tipos de projeto:', filteredTypes);
     
     if (filteredTypes.length === 0) {
         const context = ctx.getContext('2d');
@@ -1135,23 +913,11 @@ function updateProjectTypeChart() {
         return;
     }
     
-    const colors = [
-        'rgba(255, 99, 132, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 205, 86, 0.8)',
-        'rgba(75, 192, 192, 0.8)',
-        'rgba(153, 102, 255, 0.8)',
-        'rgba(255, 159, 64, 0.8)'
-    ];
-    
-    const borderColors = [
-        'rgba(255, 99, 132, 1)',
-        'rgba(54, 162, 235, 1)',
-        'rgba(255, 205, 86, 1)',
-        'rgba(75, 192, 192, 1)',
-        'rgba(153, 102, 255, 1)',
-        'rgba(255, 159, 64, 1)'
-    ];
+    // --- CORREÇÃO DE SEGURANÇA: Verifica se o plugin existe ---
+    const pluginsList = [];
+    if (typeof ChartDataLabels !== 'undefined') {
+        pluginsList.push(ChartDataLabels);
+    }
     
     try {
         charts.projectType = new Chart(ctx, {
@@ -1160,102 +926,57 @@ function updateProjectTypeChart() {
                 labels: filteredTypes.map(([key]) => key),
                 datasets: [{
                     data: filteredTypes.map(([, value]) => value),
-                    backgroundColor: colors.slice(0, filteredTypes.length),
-                    borderColor: borderColors.slice(0, filteredTypes.length),
-                    borderWidth: 2,
-                    hoverOffset: 4
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)'
+                    ],
+                    borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true,
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },      
-        
+                    legend: { position: 'bottom' },
                     datalabels: {
                         color: '#fff',
-                        font: {
-                            weight: 'bold',
-                            size: 14
-                        },
-                        formatter: function(value, context) {
-                            return value; // Mostrar valores reais ao invés de porcentagens
-                        },
-                        anchor: 'center',
-                        align: 'center',
-                        offset: 0,
-                        clamp: true
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        cornerRadius: 6,
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
-                                return `${context.label}: ${context.raw} pontos (${percentage}%)`;
-                            }
-                        }
+                        font: { weight: 'bold', size: 14 },
+                        formatter: (value) => value
                     }
                 }
             },
-            plugins: [ChartDataLabels]
+            plugins: pluginsList // Usa lista segura
         });
-        console.log('Gráfico de tipos de projeto criado com sucesso');
     } catch (error) {
         console.error('Erro ao criar gráfico de tipos de projeto:', error);
     }
 }
 
-// NOVA FUNÇÃO PARA GRÁFICO DE PROJETOS FINALIZADOS (ADMIN)
-// NOVA FUNÇÃO PARA GRÁFICO DE PROJETOS FINALIZADOS (ADMIN) - VERSÃO SEMANAL
+// Gráfico de projetos finalizados na semana
 function updateFinishedProjectsChart() {
     const ctx = document.getElementById('finishedProjectsChart');
-    if (!ctx) {
-        console.warn('Canvas finishedProjectsChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
 
     if (charts.finishedProjects) {
         charts.finishedProjects.destroy();
         charts.finishedProjects = null;
     }
 
-    // --- LÓGICA PARA FILTRAR PELA SEMANA ATUAL ---
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Zera a hora para comparações de data
-
-    const dayOfWeek = today.getDay(); // 0 (Domingo) a 6 (Sábado)
-    
-    // Calcula o início da semana (Domingo)
+    today.setHours(0, 0, 0, 0); 
+    const dayOfWeek = today.getDay(); 
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - dayOfWeek);
-
-    // Calcula o fim da semana (Sábado)
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999); // Garante que o dia inteiro seja incluído
-
-    console.log(`Filtrando projetos da semana: ${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`);
+    endOfWeek.setHours(23, 59, 59, 999);
 
     const finishedProductionsThisWeek = allProductions.filter(p => {
         if (p.status !== 'finalizado' || !p.date) return false;
         const projectDate = new Date(p.date + 'T00:00:00');
         return projectDate >= startOfWeek && projectDate <= endOfWeek;
     });
-    // --- FIM DA LÓGICA DE FILTRO ---
-    
+
     const projectsByUser = {};
     finishedProductionsThisWeek.forEach(p => {
         const userName = p.userName || p.userEmail;
@@ -1284,7 +1005,7 @@ function updateFinishedProjectsChart() {
             data: {
                 labels: users,
                 datasets: [{
-                    label: 'Projetos Finalizados na Semana', // Título atualizado
+                    label: 'Projetos Finalizados na Semana',
                     data: projectCounts,
                     backgroundColor: 'rgba(75, 192, 192, 0.8)',
                     borderColor: 'rgba(75, 192, 192, 1)',
@@ -1306,19 +1027,12 @@ function updateFinishedProjectsChart() {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                return `Projetos na semana: ${context.raw}`;
-                            }
+                            label: (context) => `Projetos na semana: ${context.raw}`
                         }
                     }
                 },
                 scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
                 }
             }
         });
@@ -1351,7 +1065,6 @@ function showFinishedProjectsDetails(user, projects) {
     detailsDiv.classList.remove('hidden');
 }
 
-// NOVA FUNÇÃO PARA VERIFICAR PROJETOS DUPLICADOS
 function checkForDuplicateProjects() {
     const warningContainer = document.getElementById('duplicateProjectsWarning');
     const listDiv = document.getElementById('duplicateProjectsList');
@@ -1360,7 +1073,6 @@ function checkForDuplicateProjects() {
 
     const productionsByPlaza = {};
 
-    // Agrupar produções por praça e por usuário
     allProductions.forEach(p => {
         if (p.plaza) {
             const plazaName = p.plaza.trim().toLowerCase();
@@ -1378,7 +1090,6 @@ function checkForDuplicateProjects() {
     let duplicatesHtml = '';
     let hasDuplicates = false;
 
-    // Verificar quais praças têm mais de um usuário
     for (const plaza in productionsByPlaza) {
         const users = Object.keys(productionsByPlaza[plaza]);
         if (users.length > 1) {
@@ -1402,7 +1113,6 @@ function checkForDuplicateProjects() {
     }
 }
 
-
 // Carregar histórico do usuário
 function loadUserHistory() {
     const userProductions = allProductions
@@ -1418,11 +1128,9 @@ function loadUserHistory() {
     }
     
     historyDiv.innerHTML = userProductions.map(p => {
-        // Formatar status
         const statusText = p.status === 'finalizado' ? '✅ Finalizado' : '🔄 Em Andamento';
         const statusColor = p.status === 'finalizado' ? '#4CAF50' : '#FF9800';
         
-        // Formatar categorias
         const categories = [];
         if (p.categories?.luminotecnico) categories.push('Luminotécnico');
         if (p.categories?.eletrico) categories.push('Elétrico');
@@ -1460,7 +1168,6 @@ function loadUserHistory() {
     }).join('');
 }
 
-// Função de filtro de histórico
 function filterHistory() {
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
     const userProductions = allProductions
@@ -1472,7 +1179,6 @@ function filterHistory() {
             (p.date && p.date.includes(searchTerm))
         );
     
-    // ✅ CORREÇÃO APLICADA AQUI
     userProductions.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     const historyDiv = document.getElementById('productionHistory');
@@ -1484,7 +1190,6 @@ function filterHistory() {
     }
     
     historyDiv.innerHTML = userProductions.map(p => {
-        // Reutilizando o mesmo layout da função loadUserHistory para consistência
         const statusText = p.status === 'finalizado' ? '✅ Finalizado' : '🔄 Em Andamento';
         const statusColor = p.status === 'finalizado' ? '#4CAF50' : '#FF9800';
         const categories = [];
@@ -1613,10 +1318,9 @@ async function updateProduction() {
         return;
     }
 
-    // ✅ CORREÇÃO APLICADA AQUI
     const requiredElements = {
         editProjectDate: document.getElementById('editProjectDate'),
-        editProjectNumber: document.getElementById('editProjectNumber'), // Estava faltando
+        editProjectNumber: document.getElementById('editProjectNumber'), 
         editPlaza: document.getElementById('editPlaza'),
         editProjectType: document.getElementById('editProjectType'),
         editProjectStatus: document.getElementById('editProjectStatus'),
@@ -1695,8 +1399,6 @@ async function updateProduction() {
     }
 }
 
-
-// Função para deletar produção
 async function deleteProduction(productionId) {
     const production = allProductions.find(p => p.id === productionId);
     if (!production) {
@@ -1704,7 +1406,6 @@ async function deleteProduction(productionId) {
         return;
     }
     
-    // Verificar permissões
     if (production.userId !== currentUser.uid && currentUserData.role !== 'admin') {
         showError('Você só pode deletar suas próprias produções');
         return;
@@ -1729,7 +1430,6 @@ async function deleteProduction(productionId) {
     }
 }
 
-// FUNÇÕES ADMINISTRATIVAS
 function showUserManagement() {
     if (currentUserData.role !== 'admin') {
         showError('Apenas administradores podem gerenciar usuários');
@@ -1743,7 +1443,6 @@ function showUserManagement() {
 function hideUserManagement() {
     document.getElementById('userModal').classList.add('hidden');
     
-    // Limpar formulário
     document.getElementById('newUserEmail').value = '';
     document.getElementById('newUserPassword').value = '';
     document.getElementById('newUserName').value = '';
@@ -1775,11 +1474,9 @@ async function addUser() {
     try {
         showButtonLoading('addUserBtn');
         
-        // Criar usuário no Firebase Auth
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         
-        // Criar perfil do usuário no Firestore
         await db.collection(COLLECTIONS.USERS).doc(user.uid).set({
             email: email,
             name: name,
@@ -1789,11 +1486,9 @@ async function addUser() {
             createdBy: currentUser.uid
         });
         
-        // Recarregar dados
         await loadAllData();
         loadUserList();
         
-        // Limpar formulário
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserPassword').value = '';
         document.getElementById('newUserName').value = '';
@@ -1904,7 +1599,6 @@ async function deleteUser(userId) {
     }
     
     try {
-        // Deletar produções do usuário
         const userProductions = await db.collection(COLLECTIONS.PRODUCTIONS)
             .where('userId', '==', userId)
             .get();
@@ -1914,12 +1608,10 @@ async function deleteUser(userId) {
             batch.delete(doc.ref);
         });
         
-        // Deletar perfil do usuário
         batch.delete(db.collection(COLLECTIONS.USERS).doc(userId));
         
         await batch.commit();
         
-        // Recarregar dados
         await loadAllData();
         loadUserList();
         updateDashboard();
@@ -1932,7 +1624,6 @@ async function deleteUser(userId) {
     }
 }
 
-// Exportar para Excel
 async function exportToExcel() {
     if (currentUserData.role !== 'admin') {
         showError('Apenas administradores podem exportar dados');
@@ -1945,7 +1636,6 @@ async function exportToExcel() {
     }
     
     try {
-        // Preparar dados para Excel
         const excelData = allProductions.map(p => ({
             'Data': p.date,
             'Projetista': p.userName || p.userEmail,
@@ -1967,12 +1657,10 @@ async function exportToExcel() {
             'Total de Pontos': p.total
         }));
         
-        // Criar workbook
         const ws = XLSX.utils.json_to_sheet(excelData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Produção Geral");
         
-        // Adicionar estatísticas
         const stats = [
             ['Relatório de Produtividade Geral - Firebase'],
             ['Data de Geração:', new Date().toLocaleDateString('pt-BR')],
@@ -1984,7 +1672,6 @@ async function exportToExcel() {
             ['Resumo por Projetista:']
         ];
         
-        // Adicionar resumo por usuário
         const userSummary = {};
         allProductions.forEach(p => {
             const userName = p.userName || p.userEmail;
@@ -1998,7 +1685,6 @@ async function exportToExcel() {
         const wsStats = XLSX.utils.aoa_to_sheet(stats);
         XLSX.utils.book_append_sheet(wb, wsStats, "Resumo");
         
-        // Download do arquivo
         const fileName = `Producao_Geral_Firebase_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
         
@@ -2010,7 +1696,6 @@ async function exportToExcel() {
     }
 }
 
-// Sincronizar dados
 async function syncData() {
     if (currentUserData.role !== 'admin') {
         showError('Apenas administradores podem sincronizar dados');
@@ -2031,7 +1716,6 @@ async function syncData() {
     }
 }
 
-// Configurar eventos de teclado
 function setupKeyboardEvents() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
@@ -2059,7 +1743,6 @@ function setupKeyboardEvents() {
     });
 }
 
-// Configurar eventos de teclado do modal de edição
 function setupEditModalEvents() {
     const editInputs = [
         'editRetrofit1', 'editRetrofit2', 'editRetrofit3', 
@@ -2075,8 +1758,6 @@ function setupEditModalEvents() {
     });
 }
 
-
-// Chamar setupEditModalEvents após o DOM estar carregado
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEditModalEvents);
 } else {
@@ -2085,7 +1766,6 @@ if (document.readyState === 'loading') {
 
 console.log('🔧 Funções de edição corrigidas carregadas!');
 
-// Configurações globais do Chart.js
 Chart.defaults.responsive = true;
 Chart.defaults.maintainAspectRatio = false;
 Chart.defaults.plugins.legend.display = true;

@@ -36,31 +36,30 @@
     });
     
     // Sobrescrever a função updateDashboard do script-firebase.js
+    // Isso garante que nossa lógica de exibição de admin persista
     if (typeof window.updateDashboard === 'function') {
         const originalUpdateDashboard = window.updateDashboard;
         window.updateDashboard = function() {
-            originalUpdateDashboard();
+            // Executa a original (que pode estar vazia ou fazer coisas da outra página)
+            if (originalUpdateDashboard) originalUpdateDashboard();
+            
+            // Re-aplica a visibilidade dos elementos de admin nesta página
             if (isAdmin) {
-                const elementosAdmin = [
-                    'teamChartContainer', 'monthlyChartContainer', 
-                    'projectTypeChartContainer', 'finishedProjectsChartCard'
-                ];
-                elementosAdmin.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.remove('admin-only');
-                });
+                mostrarElementosAdmin();
             }
         };
     }
 
     // Inicializar aplicação
     async function inicializarApp() {
+        console.log("Inicializando App Viários...");
         db = firebase.firestore();
         
         // Exibir nome do usuário
-        document.getElementById('userName').textContent = currentUser.email;
+        const userNameEl = document.getElementById('userName');
+        if(userNameEl) userNameEl.textContent = currentUser.email;
         
-        // Verificar se é admin
+        // Verificar se é admin e carregar dados
         await verificarAdmin();
         
         // Configurar data atual
@@ -69,49 +68,65 @@
         // Configurar formulário
         setupFormulario();
         
-        // Carregar dados
+        // Carregar dados (agora sabemos se é admin ou não)
         await carregarDados();
         
         // Mostrar conteúdo
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
+        const loadingScreen = document.getElementById('loadingScreen');
+        const mainContent = document.getElementById('mainContent');
+        if(loadingScreen) loadingScreen.style.display = 'none';
+        if(mainContent) mainContent.style.display = 'block';
+    }
+
+    // Função auxiliar para mostrar elementos de admin
+    function mostrarElementosAdmin() {
+        const idsAdmin = [
+            'graficoGeralContainer', 'graficoProjetistaContainer', 
+            'graficoRevisoesContainer', 'teamChartContainer', 
+            'monthlyChartContainer', 'projectTypeChartContainer', 
+            'finishedProjectsChartCard'
+        ];
+        
+        idsAdmin.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('admin-only');
+                el.style.display = 'block'; // Forçar display block caso CSS esteja escondendo
+            }
+        });
+        
+        const tabelaTitulo = document.getElementById('tabelaTitulo');
+        if(tabelaTitulo) tabelaTitulo.textContent = 'Todos os Registros de Projetos Viários';
+        
+        // Adicionar coluna de projetista na tabela se ainda não existir
+        const headerRow = document.getElementById('tableHeader');
+        if (headerRow && !headerRow.querySelector('.th-projetista')) {
+            const projetistaHeader = document.createElement('th');
+            projetistaHeader.textContent = 'Projetista';
+            projetistaHeader.className = 'th-projetista';
+            headerRow.insertBefore(projetistaHeader, headerRow.firstChild);
+        }
     }
 
     // Verificar se usuário é administrador
     async function verificarAdmin() {
         try {
-            const userDoc = await db.collection('usuarios').doc(currentUser.uid).get();
+            const userDoc = await db.collection('users').doc(currentUser.uid).get(); // ATENÇÃO: Coleção 'users' conforme script-firebase.js
             if (userDoc.exists) {
-                isAdmin = userDoc.data().admin === true;
+                const userData = userDoc.data();
+                isAdmin = userData.role === 'admin'; // Verifica o campo 'role'
+                console.log("É Admin?", isAdmin);
                 
                 if (isAdmin) {
-                    // Mostrar elementos apenas para admin
-                    const idsAdmin = [
-                        'graficoGeralContainer', 'graficoProjetistaContainer', 
-                        'graficoRevisoesContainer', 'teamChartContainer', 
-                        'monthlyChartContainer', 'projectTypeChartContainer', 
-                        'finishedProjectsChartCard'
-                    ];
-                    
-                    idsAdmin.forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.classList.remove('admin-only');
-                    });
-                    
-                    document.getElementById('tabelaTitulo').textContent = 'Todos os Registros de Projetos Viários';
-                    
-                    // Adicionar coluna de projetista na tabela se ainda não existir
-                    const headerRow = document.getElementById('tableHeader');
-                    if (headerRow && !headerRow.querySelector('.th-projetista')) {
-                        const projetistaHeader = document.createElement('th');
-                        projetistaHeader.textContent = 'Projetista';
-                        projetistaHeader.className = 'th-projetista';
-                        headerRow.insertBefore(projetistaHeader, headerRow.firstChild);
-                    }
+                    mostrarElementosAdmin();
                 }
+            } else {
+                console.log("Documento de usuário não encontrado, assumindo não-admin.");
+                isAdmin = false;
             }
         } catch (error) {
             console.error('Erro ao verificar admin:', error);
+            isAdmin = false;
         }
     }
 
@@ -157,22 +172,31 @@
 
     // Carregar dados do Firestore
     async function carregarDados() {
+        console.log("Carregando dados. Admin:", isAdmin);
         try {
             let dados = [];
             let snapshot;
             
             if (isAdmin) {
+                // Admin vê TUDO
                 snapshot = await db.collection('projetosViarios').get();
             } else {
+                // Usuário vê SÓ O SEU
                 snapshot = await db.collection('projetosViarios')
                     .where('userId', '==', currentUser.uid)
                     .get();
             }
             
+            if (snapshot.empty) {
+                console.log("Nenhum documento encontrado.");
+            }
+
             snapshot.forEach(doc => {
                 dados.push({ id: doc.id, ...doc.data() });
             });
             
+            console.log(`Carregados ${dados.length} registros.`);
+
             // Ordenar por data (mais recente primeiro)
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
@@ -181,7 +205,7 @@
             
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
-            alert('Erro ao carregar dados. Verifique sua conexão.');
+            alert('Erro ao carregar dados. Verifique o console para mais detalhes.');
         }
     }
 
@@ -232,16 +256,22 @@
 
     // Função para obter número da semana
     function getWeekNumber(date) {
+        if(!date) return 'Data Inválida';
         const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-        const yearStart = new Date(d.getFullYear(), 0, 1);
-        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        // Ajuste para garantir que a data é interpretada corretamente (evita problemas de timezone)
+        const userTimezoneOffset = d.getTimezoneOffset() * 60000;
+        const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
+        
+        adjustedDate.setHours(0, 0, 0, 0);
+        adjustedDate.setDate(adjustedDate.getDate() + 4 - (adjustedDate.getDay() || 7));
+        const yearStart = new Date(adjustedDate.getFullYear(), 0, 1);
+        const weekNo = Math.ceil((((adjustedDate - yearStart) / 86400000) + 1) / 7);
         return `Sem ${weekNo}`;
     }
 
-    // Gerar cor baseada numa string (para cada usuário ter uma cor fixa)
+    // Gerar cor baseada numa string
     function stringToColor(str) {
+        if (!str) return '#CCCCCC'; // Cor padrão cinza se str for undefined/null
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -258,14 +288,10 @@
         
         // Gráficos gerais (apenas admin)
         if (isAdmin) {
-            try {
-                // Se o usuário atual for admin, 'dados' já contém todos os registros
-                atualizarGraficoSemanalGeral(dados);
-                atualizarGraficoProjetista(dados);
-                atualizarGraficoRevisoes(dados);
-            } catch (error) {
-                console.error('Erro ao atualizar gráficos gerais:', error);
-            }
+            console.log("Atualizando gráficos de Admin...");
+            atualizarGraficoSemanalGeral(dados);
+            atualizarGraficoProjetista(dados);
+            atualizarGraficoRevisoes(dados);
         }
     }
 
@@ -305,15 +331,27 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                scales: { y: { beginAtZero: true } }
+                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    datalabels: { // Configuração segura caso o plugin exista
+                        display: true,
+                        color: 'black',
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: Math.round
+                    }
+                }
             }
         });
     }
 
-    // Gráfico semanal geral (apenas admin) - ATUALIZADO PARA BARRAS POR USUÁRIO
+    // Gráfico semanal geral (apenas admin) - ATUALIZADO PARA BARRAS EMPILHADAS POR USUÁRIO
     function atualizarGraficoSemanalGeral(dados) {
         const canvas = document.getElementById('chartSemanalGeral');
-        if (!canvas) return;
+        if (!canvas) {
+            console.warn("Canvas chartSemanalGeral não encontrado!");
+            return;
+        }
         
         // 1. Organizar dados: Semana -> Usuário -> Pontos
         const dadosAgrupados = {};
@@ -335,6 +373,9 @@
 
         const semanasOrdenadas = Array.from(todasSemanas).sort();
         const listaUsuarios = Array.from(todosUsuarios);
+
+        console.log("Semanas:", semanasOrdenadas);
+        console.log("Usuários:", listaUsuarios);
 
         // 2. Criar datasets (um por usuário)
         const datasets = listaUsuarios.map(usuario => {
@@ -368,7 +409,7 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Produção Semanal por Equipe (Pontos por Usuário)'
+                        text: 'Produção Semanal Geral (Pontos por Usuário)'
                     },
                     tooltip: {
                         mode: 'index',
@@ -376,6 +417,12 @@
                     },
                     legend: {
                         position: 'bottom'
+                    },
+                    datalabels: { // Exibir valores dentro das barras
+                        color: '#fff',
+                        font: { weight: 'bold' },
+                        formatter: (value) => value > 0 ? value : '', // Só mostra se > 0
+                        display: true
                     }
                 },
                 scales: {
@@ -429,7 +476,15 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                scales: { y: { beginAtZero: true } }
+                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    datalabels: {
+                        color: 'black',
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: Math.round
+                    }
+                }
             }
         });
     }
@@ -470,11 +525,11 @@
                 datasets: [{
                     data: [totalRevisoes, totalNovos],
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.8)', // Cor Revisão
-                        'rgba(75, 192, 192, 0.8)'  // Cor Novo
+                        'rgba(255, 159, 64, 0.8)', // Cor Revisão (Laranja)
+                        'rgba(75, 192, 192, 0.8)'  // Cor Novo (Verde Água)
                     ],
                     borderColor: [
-                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 159, 64, 1)',
                         'rgba(75, 192, 192, 1)'
                     ],
                     borderWidth: 2
@@ -490,6 +545,19 @@
                     title: {
                         display: true,
                         text: 'Percentual de Revisões vs Novos'
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold' },
+                        formatter: (value, ctx) => {
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => {
+                                sum += data;
+                            });
+                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                            return percentage;
+                        }
                     }
                 }
             }

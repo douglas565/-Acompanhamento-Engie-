@@ -1069,11 +1069,13 @@ function showFinishedProjectsDetails(user, projects) {
 function checkForDuplicateProjects() {
     const warningContainer = document.getElementById('duplicateProjectsWarning');
     const listDiv = document.getElementById('duplicateProjectsList');
+    const countBadge = document.getElementById('dupCountBadge'); // Novo elemento
 
     if (!warningContainer || !listDiv) return;
 
     const productionsByPlaza = {};
 
+    // Agrupa produções
     allProductions.forEach(p => {
         if (p.plaza) {
             const plazaName = p.plaza.trim().toLowerCase();
@@ -1089,25 +1091,36 @@ function checkForDuplicateProjects() {
     });
 
     let duplicatesHtml = '';
-    let hasDuplicates = false;
+    let duplicateCount = 0; // Contador de casos
 
     for (const plaza in productionsByPlaza) {
         const users = Object.keys(productionsByPlaza[plaza]);
         if (users.length > 1) {
-            hasDuplicates = true;
+            duplicateCount++;
+            // Recupera o nome original da praça do primeiro registro encontrado
+            const originalPlazaName = allProductions.find(p => p.plaza.trim().toLowerCase() === plaza).plaza;
+            
             duplicatesHtml += `
-                <div class="duplicate-item">
-                    <strong>Praça: ${allProductions.find(p => p.plaza.trim().toLowerCase() === plaza).plaza}</strong>
+                <div class="duplicate-item" style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <strong style="color: #a00;">Praça: ${originalPlazaName}</strong>
                     <br>
-                    <span>Encontrado nos registros de: ${users.join(', ')}</span>
+                    <span style="font-size: 0.9em;">Encontrado nos registros de: <b>${users.join(', ')}</b></span>
                 </div>
             `;
         }
     }
 
-    if (hasDuplicates) {
+    if (duplicateCount > 0) {
         listDiv.innerHTML = duplicatesHtml;
-        warningContainer.classList.remove('hidden');
+        if (countBadge) countBadge.textContent = duplicateCount;
+        
+        warningContainer.classList.remove('hidden'); // Mostra a caixa vermelha
+        
+        // Garante que a lista comece fechada (recolhida)
+        listDiv.classList.add('hidden'); 
+        const arrow = document.getElementById('dupArrow');
+        if(arrow) arrow.style.transform = 'rotate(0deg)';
+        
     } else {
         listDiv.innerHTML = '';
         warningContainer.classList.add('hidden');
@@ -1764,6 +1777,22 @@ function setupEditModalEvents() {
             element.addEventListener('change', calculateEditTotal);
         }
     });
+}
+
+// Função para abrir/fechar a lista de duplicados
+function toggleDuplicateList() {
+    const list = document.getElementById('duplicateProjectsList');
+    const arrow = document.getElementById('dupArrow');
+    
+    if (list.classList.contains('hidden')) {
+        // Abrir
+        list.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)'; // Gira a seta para cima
+    } else {
+        // Fechar
+        list.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)'; // Gira a seta para baixo
+    }
 }
 
 if (document.readyState === 'loading') {

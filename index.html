@@ -86,11 +86,19 @@
                     <button class="btn" onclick="syncData()">🔄 Sincronizar Dados</button>
                 </div>
 
-                <div id="duplicateProjectsWarning" class="hidden" style="margin-top: 20px;">
-                    <h4>⚠️ Alerta de Projetos Duplicados</h4>
-                    <div id="duplicateProjectsList"></div>
+                <div id="duplicateProjectsWarning" class="hidden" style="margin-top: 20px; background: #ffcccc; border-radius: 8px; border: 1px solid #ffb3b3;">
+    
+                    <div onclick="toggleDuplicateList()" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin: 0; color: #cc0000; display: flex; align-items: center; gap: 10px;">
+                            ⚠️ Alerta de Projetos Duplicados 
+                            <span id="dupCountBadge" style="background: #cc0000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">0</span>
+                        </h4>
+                        <span id="dupArrow" style="transition: transform 0.3s; font-weight: bold; color: #cc0000;">▼</span>
+                    </div>
+                
+                    <div id="duplicateProjectsList" class="hidden" style="padding: 0 15px 15px 15px; border-top: 1px solid #ffb3b3;">
+                        </div>
                 </div>
-            </div>
             
             <div id="connectionStatus" class="connection-status">
                 <span id="connectionIcon">🟢</span>

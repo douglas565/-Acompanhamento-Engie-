@@ -1779,7 +1779,14 @@ function setupEditModalEvents() {
     });
 }
 
-// Função para abrir/fechar a lista de duplicados
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEditModalEvents);
+} else {
+    setupEditModalEvents();
+}
+
+console.log('🔧 Funções de edição corrigidas carregadas!');
+
 function toggleDuplicateList() {
     const list = document.getElementById('duplicateProjectsList');
     const arrow = document.getElementById('dupArrow');
@@ -1796,14 +1803,6 @@ function toggleDuplicateList() {
 }
 
 window.toggleDuplicateList = toggleDuplicateList;
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupEditModalEvents);
-} else {
-    setupEditModalEvents();
-}
-
-console.log('🔧 Funções de edição corrigidas carregadas!');
 
 Chart.defaults.responsive = true;
 Chart.defaults.maintainAspectRatio = false;

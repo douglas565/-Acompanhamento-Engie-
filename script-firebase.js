@@ -443,6 +443,7 @@ async function handleProductionSubmit(e) {
             plaza: plazaEl?.value || 'N/A',
             projectType: projectTypeEl?.value || 'N/A', // Verifique se este campo existe no HTML
             status: statusProjeto,
+            isRevision: document.getElementById('isRevision').checked,
             categories: categories,
             points: points,
             total: total,
@@ -1137,6 +1138,10 @@ function loadUserHistory() {
         if (p.categories?.planilhao) categories.push('Planilhão');
         if (p.categories?.croqui) categories.push('Croqui');
         const categoriesText = categories.length > 0 ? categories.join(', ') : 'Não especificado';
+
+        const revisionBadge = p.isRevision ? 
+            '<span style="background: #ffc107; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; margin-left: 8px;">⚠️ REVISÃO</span>' 
+            : '';
         
         return `
         <div class="production-item">
@@ -1256,6 +1261,7 @@ function editProduction(productionId) {
             document.getElementById("editPlaza").value = production.plaza || "";
             document.getElementById("editProjectType").value = production.projectType || "";
             document.getElementById("editProjectStatus").value = production.status || "em_andamento";
+            document.getElementById('editIsRevision').checked = production.isRevision || false;
             
             document.getElementById('editCategoryLuminotecnico').checked = production.categories?.luminotecnico || false;
             document.getElementById('editCategoryEletrico').checked = production.categories?.eletrico || false;
@@ -1369,6 +1375,7 @@ async function updateProduction() {
             plaza: requiredElements.editPlaza.value.trim(),
             projectType: requiredElements.editProjectType.value.trim(),
             status: statusFinal,
+            isRevision: document.getElementById('editIsRevision').checked,
             categories: categories,
             points: points,
             total: Object.values(points).reduce((sum, val) => sum + val, 0),
@@ -1642,6 +1649,7 @@ async function exportToExcel() {
             'Email': p.userEmail,
             'Equipe': p.team,
             'Praça': p.plaza,
+            'É Revisão?': p.isRevision ? 'SIM' : 'NÃO',
             'Tipo de Projeto': p.projectType,
             'Status': p.status === 'finalizado' ? 'Finalizado' : 'Em Andamento',
             'Luminotécnico': p.categories?.luminotecnico && p.status === 'finalizado' ? 'Finalizado' : (p.categories?.luminotecnico ? 'Em Andamento' : ''),

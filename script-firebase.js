@@ -1779,13 +1779,7 @@ function setupEditModalEvents() {
     });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupEditModalEvents);
-} else {
-    setupEditModalEvents();
-}
 
-console.log('🔧 Funções de edição corrigidas carregadas!');
 
 function toggleDuplicateList() {
     const list = document.getElementById('duplicateProjectsList');
@@ -1833,3 +1827,21 @@ window.hideEditModal = hideEditModal;
 window.calculateEditTotal = calculateEditTotal;
 
 console.log('✅ Todas as funções foram vinculadas ao botão com sucesso!');
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEditModalEvents);
+} else {
+    setupEditModalEvents();
+}
+
+console.log('🔧 Funções de edição corrigidas carregadas!');
+
+// Configuração segura do Chart.js (não trava o script se der erro)
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.plugins.legend.display = true;
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.elements.arc.borderWidth = 2;
+    Chart.defaults.elements.arc.borderColor = '#ffffff';
+}

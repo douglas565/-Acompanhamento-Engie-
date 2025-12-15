@@ -1780,37 +1780,31 @@ function setupEditModalEvents() {
 }
 
 
-
 function toggleDuplicateList() {
     const list = document.getElementById('duplicateProjectsList');
     const arrow = document.getElementById('dupArrow');
     
-    if (list.classList.contains('hidden')) {
-        // Abrir
-        list.classList.remove('hidden');
-        arrow.style.transform = 'rotate(180deg)'; // Gira a seta para cima
-    } else {
-        // Fechar
-        list.classList.add('hidden');
-        arrow.style.transform = 'rotate(0deg)'; // Gira a seta para baixo
+    if (list && arrow) { // Safety check
+        if (list.classList.contains('hidden')) {
+            list.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            list.classList.add('hidden');
+            arrow.style.transform = 'rotate(0deg)';
+        }
     }
 }
 
+// ============================================================
+// 2. EXPOSE FUNCTIONS TO WINDOW (Crucial for HTML Buttons)
+// ============================================================
 window.toggleDuplicateList = toggleDuplicateList;
-
-Chart.defaults.responsive = true;
-Chart.defaults.maintainAspectRatio = false;
-Chart.defaults.plugins.legend.display = true;
-Chart.defaults.plugins.legend.position = 'bottom';
-Chart.defaults.elements.arc.borderWidth = 2;
-Chart.defaults.elements.arc.borderColor = '#ffffff';
-
 window.loginUser = loginUser;
 window.logoutUser = logoutUser;
 window.fillDemoUser = fillDemoUser;
 window.calculateTotal = calculateTotal;
 
-// Funções Administrativas
+// Admin Functions
 window.showUserManagement = showUserManagement;
 window.hideUserManagement = hideUserManagement;
 window.addUser = addUser;
@@ -1819,29 +1813,37 @@ window.deleteUser = deleteUser;
 window.exportToExcel = exportToExcel;
 window.syncData = syncData;
 
-// Funções de Edição
+// Edit Functions
 window.editProduction = editProduction;
 window.updateProduction = updateProduction;
 window.deleteProduction = deleteProduction;
 window.hideEditModal = hideEditModal;
 window.calculateEditTotal = calculateEditTotal;
 
-console.log('✅ Todas as funções foram vinculadas ao botão com sucesso!');
+// Global exports for charts
+window.updateDashboard = updateDashboard;
 
+console.log('✅ Functions linked to window!');
+
+// ============================================================
+// 3. SAFE INITIALIZATION
+// ============================================================
+
+// Initialize Chart.js settings safely
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.plugins.legend.display = true;
+    Chart.defaults.plugins.legend.position = 'bottom';
+} else {
+    console.warn('⚠️ Chart.js not loaded. Charts will not be displayed.');
+}
+
+// Ensure edit events are setup
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEditModalEvents);
 } else {
     setupEditModalEvents();
 }
 
-console.log('🔧 Funções de edição corrigidas carregadas!');
-
-// Configuração segura do Chart.js (não trava o script se der erro)
-if (typeof Chart !== 'undefined') {
-    Chart.defaults.responsive = true;
-    Chart.defaults.maintainAspectRatio = false;
-    Chart.defaults.plugins.legend.display = true;
-    Chart.defaults.plugins.legend.position = 'bottom';
-    Chart.defaults.elements.arc.borderWidth = 2;
-    Chart.defaults.elements.arc.borderColor = '#ffffff';
-}
+console.log('🚀 System initialized!');

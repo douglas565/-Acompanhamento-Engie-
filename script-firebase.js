@@ -1786,11 +1786,9 @@ function toggleDuplicateList() {
     
     if (list && arrow) {
         if (list.classList.contains('hidden')) {
-            // Abrir
             list.classList.remove('hidden');
             arrow.style.transform = 'rotate(180deg)';
         } else {
-            // Fechar
             list.classList.add('hidden');
             arrow.style.transform = 'rotate(0deg)';
         }
@@ -1798,9 +1796,9 @@ function toggleDuplicateList() {
 }
 
 // ============================================================
-// 1. CONECTAR FUNÇÕES AOS BOTÕES (Essencial)
+// 1. CONECTAR FUNÇÕES AO WINDOW (CRUCIAL PARA OS BOTÕES)
 // ============================================================
-// Isso torna as funções visíveis para o HTML
+// Isso impede o erro "is not defined" que deixa a tela branca ou botões mortos
 window.toggleDuplicateList = toggleDuplicateList;
 window.loginUser = loginUser;
 window.logoutUser = logoutUser;
@@ -1823,10 +1821,13 @@ window.deleteProduction = deleteProduction;
 window.hideEditModal = hideEditModal;
 window.calculateEditTotal = calculateEditTotal;
 
+// Exportar global para gráficos usarem
+window.updateDashboard = updateDashboard;
+
 console.log('✅ Botões e funções conectados com sucesso!');
 
 // ============================================================
-// 2. CONFIGURAÇÕES FINAIS E SEGURAS
+// 2. INICIALIZAÇÃO SEGURA (EVITA TELA BRANCA)
 // ============================================================
 
 if (document.readyState === 'loading') {
@@ -1835,9 +1836,8 @@ if (document.readyState === 'loading') {
     setupEditModalEvents();
 }
 
-console.log('🔧 Eventos de edição carregados!');
-
-// Configuração segura do Chart.js (Proteção contra tela branca)
+// Configuração SEGURA do Chart.js
+// O 'if' impede que o site todo trave se o gráfico demorar para carregar
 if (typeof Chart !== 'undefined') {
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
@@ -1845,4 +1845,6 @@ if (typeof Chart !== 'undefined') {
     Chart.defaults.plugins.legend.position = 'bottom';
     Chart.defaults.elements.arc.borderWidth = 2;
     Chart.defaults.elements.arc.borderColor = '#ffffff';
+} else {
+    console.warn('⚠️ Chart.js não carregou. Gráficos indisponíveis, mas o sistema segue funcional.');
 }

@@ -2092,3 +2092,444 @@ Chart.defaults.plugins.legend.display = true;
 Chart.defaults.plugins.legend.position = 'bottom';
 Chart.defaults.elements.arc.borderWidth = 2;
 Chart.defaults.elements.arc.borderColor = '#ffffff';
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Produtividade - Equipe de Projetos</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    
+    <script src="projeto-manager.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>🔥 Conectando com Firebase...</h2>
+            <p>Aguarde um momento</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loginScreen" class="card login-card hidden">
+            <div class="header">
+                <h1>Sistema de Produtividade</h1>
+                <p>Equipe de Projetos - Curitiba & Florianópolis</p>
+                <div class="firebase-badge">
+                    <span>🔥 Powered by Firebase</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" placeholder="Digite seu email" autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Senha:</label>
+                <input type="password" id="loginPassword" placeholder="Digite sua senha" autocomplete="current-password">
+            </div>
+            
+            <button class="btn" id="loginBtn" style="width: 100%;" onclick="loginUser()">
+                <span id="loginBtnText">Entrar</span>
+                <div id="loginSpinner" class="btn-spinner hidden"></div>
+            </button>
+            
+            <div id="loginError" class="error-message hidden">
+                Email ou senha incorretos!
+            </div>
+            
+            <div class="demo-users">
+                <strong>👥 Usuários de Demonstração:</strong><br>
+                <div class="demo-user" onclick="fillDemoUser('admin@sistema.com', 'admin123')">
+                    <strong>Admin:</strong> admin@sistema.com / admin123
+                </div>
+                <div class="demo-user" onclick="fillDemoUser('eduarda@sistema.com', '123456')">
+                    <strong>Eduarda:</strong> eduarda@sistema.com / 123456
+                </div>
+                <div class="demo-user" onclick="fillDemoUser('joao@sistema.com', '123456')">
+                    <strong>João:</strong> joao@sistema.com / 123456
+                </div>
+            </div>
+        </div>
+        
+        <div id="mainScreen" class="hidden">
+            <div class="user-info">
+                <div>
+                    <strong>Bem-vindo(a), <span id="currentUser"></span></strong>
+                    <span id="userRole"></span> | <span id="currentDate"></span>
+                    <br><small>🔥 Dados sincronizados com Firebase</small>
+                </div>
+                <button class="btn btn-logout" onclick="logoutUser()">Sair</button>
+            </div>
+            
+            <div id="adminPanel" class="admin-panel hidden">
+                <h3>📊 Painel Administrativo</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="exportToExcel()">📥 Exportar Excel</button>
+                    <button class="btn btn-secondary" onclick="showUserManagement()">👥 Gerenciar Usuários</button>
+                    <button class="btn" onclick="syncData()">🔄 Sincronizar Dados</button>
+                </div>
+
+                <div id="duplicateProjectsWarning" class="hidden" style="margin-top: 20px; background: #ffcccc; border-radius: 8px; border: 1px solid #ffb3b3;">
+                    <div onclick="toggleDuplicateList()" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin: 0; color: #cc0000; display: flex; align-items: center; gap: 10px;">
+                            ⚠️ Alerta de Projetos Duplicados 
+                            <span id="dupCountBadge" style="background: #cc0000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">0</span>
+                        </h4>
+                        <span id="dupArrow" style="transition: transform 0.3s; font-weight: bold; color: #cc0000;">▼</span>
+                    </div>
+                    <div id="duplicateProjectsList" class="hidden" style="padding: 0 15px 15px 15px; border-top: 1px solid #ffb3b3;">
+                        </div>
+                </div>
+            </div>
+            
+            <div id="connectionStatus" class="connection-status">
+                <span id="connectionIcon">🟢</span>
+                <span id="connectionText">Conectado ao Firebase</span>
+            </div>
+            
+            <div class="card">
+                <h3>📈 Estatísticas Gerais</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPointsToday">0</div>
+                        <div>Pontos Hoje</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPointsMonth">0</div>
+                        <div>Pontos do Mês</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgPointsDay">0</div>
+                        <div>Média Diária</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProjects">0</div>
+                        <div>Projetos Finalizados</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <a href="projetos-viarios.html" class="btn-viarios">
+                    <div class="icon">🛣️</div>
+                    <div class="text">
+                        <div class="title">Projetos Viários</div>
+                        <div class="subtitle">Acompanhamento de pontos e produção</div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="card">
+                <h3>📝 Registrar Produção Diária</h3>
+                
+                <form id="productionForm">
+                    <div class="form-grid"> <div class="form-group">
+                            <label for="projectDate">Data:</label>
+                            <input type="date" id="projectDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="projectNumber">Número do Projeto:</label>
+                            <input type="text" id="projectNumber" placeholder="Ex: 2025-00123" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="plaza">Praças:</label>
+                            <input type="text" id="plaza" placeholder="Ex: Praça Elias Abdo Bittar" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="projectStatus">Status do Projeto:</label>
+                            <select id="projectStatus" required>
+                                <option value="">Selecione o status</option>
+                                <option value="em_andamento">Em Andamento</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-top: 15px; margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #856404; font-weight: bold;">
+                            <input type="checkbox" id="isRevision" style="width: 20px; height: 20px;">
+                            ⚠️ É Revisão de Praça?
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Categorias do Informe:</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryLuminotecnico" value="luminotecnico">
+                                Luminotécnico
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryEletrico" value="eletrico">
+                                Elétrico
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryPlanilhao" value="planilhao">
+                                Planilhão
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="categoryCroqui" value="croqui">
+                                Croqui
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <h4>Pontos de Produção:</h4>
+                    <div class="points-grid">
+                        <div class="point-input">
+                            <label for="retrofit1">Retrofit 1:</label>
+                            <input type="number" id="retrofit1" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit2">Retrofit 2:</label>
+                            <input type="number" id="retrofit2" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit3">Retrofit 3:</label>
+                            <input type="number" id="retrofit3" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="retrofit4">Retrofit 4:</label>
+                            <input type="number" id="retrofit4" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="remodelagemV">Remodelamento V:</label>
+                            <input type="number" id="remodelagemV" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="point-input">
+                            <label for="remodelagemD">Remodelamento D:</label>
+                            <input type="number" id="remodelagemD" value="0" min="0" onchange="calculateTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="total-points">
+                        Total: <span id="totalPoints">0</span> pontos
+                    </div>
+                    
+                    <button type="submit" class="btn" id="saveBtn" style="width: 100%;">
+                        <span id="saveBtnText">💾 Salvar Produção</span>
+                        <div id="saveSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📊 Produção por Equipe</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="teamChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>📈 Produção Semanal</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                    <div id="weeklyDetails" class="hidden" style="background: #fff; padding: 20px; border-radius: 8px;  box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-top: 20px;"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>📋 Tipos de Projeto </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="projectTypeChart"></canvas>
+                    </div>
+                </div>
+                <div id="finishedProjectsChartCard" class="chart-card hidden">
+                    <h3>✅ Projetos Finalizados por Projetista (Semanal)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="finishedProjectsChart"></canvas>
+                    </div>
+                    <div id="finishedProjectsDetails" class="hidden" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📋 Meu Histórico de Produção</h3>
+                <div class="form-group">
+                    <input type="text" id="historySearch" placeholder="🔍 Buscar por praça, nº do projeto ou data..." onkeyup="filterHistory()" style="margin-bottom: 15px;">
+                </div>
+                <div id="productionHistory" class="production-list">
+                    <div class="loading-placeholder">
+                        <div class="spinner-small"></div>
+                        <p>Carregando histórico...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="editModal" class="modal-overlay hidden">
+            <div class="modal-content card">
+                <h3>✏️ Editar Produção</h3>
+                
+                <div class="form-group">
+                    <label for="editProjectDate">Data:</label>
+                    <input type="date" id="editProjectDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectNumber">Número do Projeto:</label>
+                    <input type="text" id="editProjectNumber" placeholder="Ex: 2025-00123" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editPlaza">Praças:</label>
+                    <input type="text" id="editPlaza" placeholder="Ex: Praça Elias Abdo Bittar" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectType">Tipo de Projeto:</label>
+                    <input type="text" id="editProjectType" placeholder="Ex: Projeto Novo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editProjectStatus">Status do Projeto:</label>
+                    <select id="editProjectStatus" required>
+                        <option value="">Selecione o status</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="finalizado">Finalizado</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #856404; font-weight: bold;">
+                        <input type="checkbox" id="editIsRevision" style="width: 20px; height: 20px;">
+                        ⚠️ É Revisão de Praça?
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Categorias do Informe:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryLuminotecnico" value="luminotecnico">
+                            Luminotécnico
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryEletrico" value="eletrico">
+                            Elétrico
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryPlanilhao" value="planilhao">
+                            Planilhão
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="editCategoryCroqui" value="croqui">
+                            Croqui
+                        </label>
+                    </div>
+                </div>
+                
+                <h4>Pontos de Produção:</h4>
+                <div class="points-grid">
+                    <div class="point-input">
+                        <label for="editRetrofit1">Retrofit 1:</label>
+                        <input type="number" id="editRetrofit1" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit2">Retrofit 2:</label>
+                        <input type="number" id="editRetrofit2" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit3">Retrofit 3:</label>
+                        <input type="number" id="editRetrofit3" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRetrofit4">Retrofit 4:</label>
+                        <input type="number" id="editRetrofit4" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRemodelagemV">Remodelamento V:</label>
+                        <input type="number" id="editRemodelagemV" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                    <div class="point-input">
+                        <label for="editRemodelagemD">Remodelamento D:</label>
+                        <input type="number" id="editRemodelagemD" value="0" min="0" onchange="calculateEditTotal()">
+                    </div>
+                </div>
+                
+                <div class="total-points">
+                    Total: <span id="editTotalPoints">0</span> pontos
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="hideEditModal()">Cancelar</button>
+                    <button class="btn" id="updateBtn" onclick="updateProduction()">
+                        <span id="updateBtnText">💾 Salvar Alterações</span>
+                        <div id="updateSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="userModal" class="modal-overlay hidden">
+            <div class="modal-content card">
+                <h3>👥 Gerenciamento de Usuários</h3>
+                
+                <div class="form-group">
+                    <label for="newUserEmail">Email do Novo Usuário:</label>
+                    <input type="email" id="newUserEmail" placeholder="usuario@empresa.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserPassword">Senha:</label>
+                    <input type="password" id="newUserPassword" placeholder="Senha (mín. 6 caracteres)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserName">Nome:</label>
+                    <input type="text" id="newUserName" placeholder="Nome do usuário">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newUserTeam">Equipe:</label>
+                    <select id="newUserTeam">
+                        <option value="Curitiba">Curitiba</option>
+                        <option value="Florianópolis">Florianópolis</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="newUserAdmin"> Administrador
+                    </label>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="hideUserManagement()">Cancelar</button>
+                    <button class="btn" id="addUserBtn" onclick="addUser()">
+                        <span id="addUserBtnText">Adicionar Usuário</span>
+                        <div id="addUserSpinner" class="btn-spinner hidden"></div>
+                    </button>
+                </div>
+                
+                <div id="userList" class="user-list">
+                    <div class="loading-placeholder">
+                        <div class="spinner-small"></div>
+                        <p>Carregando usuários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="script-firebase.js"></script>
+</body>
+</html>

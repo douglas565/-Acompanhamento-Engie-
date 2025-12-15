@@ -658,7 +658,8 @@ function setupChartResize() {
 // *** FUNÇÃO CORRIGIDA PARA GRÁFICO DE EQUIPES ***
 function updateTeamChart() {
     const ctx = document.getElementById('teamChart');
-    const teamChartCard = ctx ? ctx.closest('.chart-card') : null;
+    if (!ctx) return;
+    const teamChartCard = ctx.closest('.chart-card');
 
     if (!currentUserData || currentUserData.role !== 'admin') {
         if (teamChartCard) teamChartCard.style.display = 'none';
@@ -666,7 +667,7 @@ function updateTeamChart() {
     } else {
         if (teamChartCard) teamChartCard.style.display = ''; 
     }
-    
+
     if (!ctx) return;
     
     if (charts.team) {

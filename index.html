@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     
     <script src="projeto-manager.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -87,7 +86,6 @@
                 </div>
 
                 <div id="duplicateProjectsWarning" class="hidden" style="margin-top: 20px; background: #ffcccc; border-radius: 8px; border: 1px solid #ffb3b3;">
-    
                     <div onclick="toggleDuplicateList()" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                         <h4 style="margin: 0; color: #cc0000; display: flex; align-items: center; gap: 10px;">
                             ⚠️ Alerta de Projetos Duplicados 
@@ -95,10 +93,10 @@
                         </h4>
                         <span id="dupArrow" style="transition: transform 0.3s; font-weight: bold; color: #cc0000;">▼</span>
                     </div>
-                
                     <div id="duplicateProjectsList" class="hidden" style="padding: 0 15px 15px 15px; border-top: 1px solid #ffb3b3;">
                         </div>
                 </div>
+            </div>
             
             <div id="connectionStatus" class="connection-status">
                 <span id="connectionIcon">🟢</span>
@@ -128,13 +126,13 @@
             </div>
             
             <div class="navigation-buttons">
-            <a href="projetos-viarios.html" class="btn-viarios">
-                <div class="icon">🛣️</div>
-                <div class="text">
-                    <div class="title">Projetos Viários</div>
-                    <div class="subtitle">Acompanhamento de pontos e produção</div>
-                </div>
-            </a>
+                <a href="projetos-viarios.html" class="btn-viarios">
+                    <div class="icon">🛣️</div>
+                    <div class="text">
+                        <div class="title">Projetos Viários</div>
+                        <div class="subtitle">Acompanhamento de pontos e produção</div>
+                    </div>
+                </a>
             </div>
 
             <div class="card">
@@ -164,7 +162,9 @@
                                 <option value="finalizado">Finalizado</option>
                             </select>
                         </div>
-                    </div> <div class="form-group" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-top: 15px;">
+                    </div>
+
+                    <div class="form-group" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-top: 15px; margin-bottom: 15px;">
                         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #856404; font-weight: bold;">
                             <input type="checkbox" id="isRevision" style="width: 20px; height: 20px;">
                             ⚠️ É Revisão de Praça?
@@ -192,6 +192,7 @@
                             </label>
                         </div>
                     </div>
+                    
                     <h4>Pontos de Produção:</h4>
                     <div class="points-grid">
                         <div class="point-input">
@@ -317,10 +318,6 @@
                 <div class="form-group">
                     <label>Categorias do Informe:</label>
                     <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
-                
-                <div class="form-group">
-                    <label>Categorias do Informe:</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
                         <label style="display: flex; align-items: center; gap: 5px;">
                             <input type="checkbox" id="editCategoryLuminotecnico" value="luminotecnico">
                             Luminotécnico
@@ -379,19 +376,6 @@
                         <div id="updateSpinner" class="btn-spinner hidden"></div>
                     </button>
                 </div>
-                
-            </div>
-
-            <div class="form-group" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #856404; font-weight: bold;">
-                    <input type="checkbox" id="editIsRevision" style="width: 20px; height: 20px;">
-                    ⚠️ É Revisão de Praça?
-                </label>
-            </div>
-            
-            <div class="form-group">
-                <label>Categorias do Informe:</label>
-
             </div>
         </div>
 
@@ -449,5 +433,4 @@
     <script src="firebase-config.js"></script>
     <script src="script-firebase.js"></script>
 </body>
-
 </html>

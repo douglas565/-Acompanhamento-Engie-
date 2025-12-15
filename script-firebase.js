@@ -1795,6 +1795,8 @@ function toggleDuplicateList() {
     }
 }
 
+window.toggleDuplicateList = toggleDuplicateList;
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEditModalEvents);
 } else {

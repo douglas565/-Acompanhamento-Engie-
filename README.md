@@ -66,6 +66,8 @@ Sistema web desenvolvido para gestão e monitorização da produtividade das equ
 ├── firebase-config.js        # Configuração das chaves do Firebase
 └── projeto-manager.js        # Regras de negócio (Cálculo de progresso/finalização)
 
+```
+
 ## 📝 Notas de Versão
 
 - v2.1: Adicionado campo "É Revisão de Praça" nos formulários e relatórios.

@@ -1779,12 +1779,11 @@ function setupEditModalEvents() {
     });
 }
 
-
 function toggleDuplicateList() {
     const list = document.getElementById('duplicateProjectsList');
     const arrow = document.getElementById('dupArrow');
     
-    if (list && arrow) { // Safety check
+    if (list && arrow) { // Verifica se os elementos existem para não dar erro
         if (list.classList.contains('hidden')) {
             list.classList.remove('hidden');
             arrow.style.transform = 'rotate(180deg)';
@@ -1796,15 +1795,16 @@ function toggleDuplicateList() {
 }
 
 // ============================================================
-// 2. EXPOSE FUNCTIONS TO WINDOW (Crucial for HTML Buttons)
+// 2. EXPOR FUNÇÕES PARA O WINDOW (CRUCIAL PARA OS BOTÕES)
 // ============================================================
+// Fazemos isso PRIMEIRO para garantir que os botões funcionem mesmo se o gráfico falhar
 window.toggleDuplicateList = toggleDuplicateList;
 window.loginUser = loginUser;
 window.logoutUser = logoutUser;
 window.fillDemoUser = fillDemoUser;
 window.calculateTotal = calculateTotal;
 
-// Admin Functions
+// Funções Administrativas
 window.showUserManagement = showUserManagement;
 window.hideUserManagement = hideUserManagement;
 window.addUser = addUser;
@@ -1813,37 +1813,37 @@ window.deleteUser = deleteUser;
 window.exportToExcel = exportToExcel;
 window.syncData = syncData;
 
-// Edit Functions
+// Funções de Edição
 window.editProduction = editProduction;
 window.updateProduction = updateProduction;
 window.deleteProduction = deleteProduction;
 window.hideEditModal = hideEditModal;
 window.calculateEditTotal = calculateEditTotal;
 
-// Global exports for charts
+// Exportar global para gráficos usarem se necessário
 window.updateDashboard = updateDashboard;
 
-console.log('✅ Functions linked to window!');
+console.log('✅ Funções vinculadas ao window com sucesso!');
 
 // ============================================================
-// 3. SAFE INITIALIZATION
+// 3. INICIALIZAÇÃO SEGURA (EVITA TELA BRANCA)
 // ============================================================
 
-// Initialize Chart.js settings safely
+// Inicializa configurações do Chart.js com verificação de segurança
 if (typeof Chart !== 'undefined') {
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.plugins.legend.display = true;
     Chart.defaults.plugins.legend.position = 'bottom';
 } else {
-    console.warn('⚠️ Chart.js not loaded. Charts will not be displayed.');
+    console.warn('⚠️ Chart.js não carregou. Os gráficos não serão exibidos, mas o sistema funcionará.');
 }
 
-// Ensure edit events are setup
+// Garante que os eventos de edição sejam configurados
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEditModalEvents);
 } else {
     setupEditModalEvents();
 }
 
-console.log('🚀 System initialized!');
+console.log('🚀 Sistema inicializado!');

@@ -1,192 +1,67 @@
-# Sistema de Produtividade - Equipe de Projetos 📊
+# 📊 Sistema de Acompanhamento de Produtividade - ENGIE
 
-Sistema web para gerenciamento de produtividade das equipes de projetistas de Curitiba e Florianópolis.
+Sistema web desenvolvido para gestão e monitorização da produtividade das equipas de projetos (Curitiba e Florianópolis). A aplicação permite o registo diário de atividades, visualização de métricas em tempo real e gestão administrativa completa.
 
 ## 🚀 Funcionalidades
 
-### 👥 Sistema de Usuários
-- **Login seguro** com usuário e senha
-- **Níveis de acesso**: Usuário comum e Administrador
-- **Equipes separadas**: Curitiba e Florianópolis
-- **Gerenciamento de usuários** (apenas admins)
+### 🔐 Autenticação e Perfis
+- **Login Seguro**: Autenticação via Firebase Auth.
+- **Controlo de Acesso**:
+  - **Usuário Comum**: Regista a produção e visualiza o seu histórico/progresso.
+  - **Administrador**: Acesso total a relatórios, gestão de utilizadores e gráficos globais.
 
-### 📝 Registro de Produção
-- Formulário completo baseado no informe diário
-- Campos para:
-  - Data do projeto
-  - Praças trabalhadas
-  - Tipo de projeto (descrição detalhada)
-  - Pontos por categoria:
-    - Retrofit 1, 2, 3, 4
-    - Remodelamento V e D
-- **Cálculo automático** do total de pontos
+### 📝 Módulo 1: Produção Diária (Dashboard Principal)
+- **Registo Detalhado**:
+  - Dados do projeto (Número, Praça, Tipo).
+  - Pontuação por categoria (Retrofit 1-4, Remodelagem V/D).
+  - Checkbox para marcar **Revisão de Praça** ⚠️.
+  - Seleção de categorias (Luminotécnico, Elétrico, Planilhão, Croqui).
+  - **Cálculo Automático** de pontuação total.
+  - **Finalização Automática**: O sistema identifica quando um projeto está concluído com base nas categorias obrigatórias.
+- **Dashboards Visuais**:
+  - 🥧 Gráfico de Produção por Equipe (Curitiba vs Florianópolis).
+  - 📈 Gráfico de Evolução Semanal.
+  - 📋 Distribuição por Tipos de Projeto.
+  - ✅ Gráfico de Projetos Finalizados por Projetista (Semanal).
+- **Histórico Individual**: Lista pesquisável e editável das produções do utilizador.
 
-### 📈 Dashboard e Estatísticas
-- **Estatísticas gerais**:
-  - Pontos do dia atual
-  - Pontos do mês
-  - Média diária
-  - Total de projetos registrados
+### 🛣️ Módulo 2: Projetos Viários
+*Acesso via botão dedicado na dashboard principal.*
+- **Registo Específico**: Formulário simplificado para Vias (Nome, Data, Pontos, Revisão).
+- **Tabela de Registos**: Visualização completa com opções de edição e exclusão.
+- **Gráficos Exclusivos**:
+  - Produção Individual Semanal.
+  - Produção Geral da Equipa (Admin).
+  - Ranking de Projetistas (Admin).
+  - Comparativo Revisões vs. Novos (Admin).
 
-- **4 Gráficos interativos**:
-  - 🥧 Produção por equipe (Curitiba vs Florianópolis)
-  - 📊 Produção mensal ao longo do tempo
-  - 📋 Distribuição por tipos de projeto
-
-### 🔧 Recursos Administrativos
-- **Gerenciamento completo de usuários**
-- **Exportação para Excel** com dados detalhados
-- **Sistema de backup/restauração**
-- **Controle de permissões**
-- **Exclusão de registros**
-
-### 👤 Recursos do Usuário
-- **Histórico pessoal** de produções
-- **Busca no histórico** por praça, projeto ou data
-- **Interface responsiva** e intuitiva
-
-## 🔐 Usuários Padrão
-
-| Usuário | Senha | Nível | Equipe |
-|---------|-------|-------|--------|
-| admin | admin123 | Administrador | Curitiba |
-| eduarda | 123456 | Usuário | Curitiba |
-| joao | 123456 | Usuário | Florianópolis |
-
-## 📁 Estrutura de Arquivos
-
-```
-sistema-produtividade/
-├── index.html          # Página principal
-├── styles.css          # Estilos CSS
-├── script.js           # JavaScript principal
-└── README.md           # Esta documentação
-```
-
-## 🚀 Como Usar no GitHub Pages
-
-### 1. Criar Repositório
-```bash
-# Criar novo repositório no GitHub
-# Nome sugerido: sistema-produtividade
-```
-
-### 2. Upload dos Arquivos
-- Faça upload dos 4 arquivos para o repositório
-- Certifique-se que o arquivo principal se chama `index.html`
-
-### 3. Ativar GitHub Pages
-1. Vá em **Settings** > **Pages**
-2. Em **Source**, selecione **Deploy from a branch**
-3. Em **Branch**, selecione **main** (ou master)
-4. Clique em **Save**
-
-### 4. Acessar o Sistema
-- URL será: `https://seuusuario.github.io/sistema-produtividade`
-- O sistema estará disponível em poucos minutos
-
-## 💾 Armazenamento de Dados
-
-⚠️ **Importante**: Como o GitHub Pages é estático, os dados são armazenados localmente no navegador usando `localStorage`.
-
-### Características:
-- ✅ **Dados persistem** enquanto usar o mesmo navegador
-- ✅ **Backup/Restauração** disponível para admins
-- ⚠️ **Dados são locais** por dispositivo/navegador
-- ⚠️ **Limpar cache** do navegador apaga os dados
-
-### Para Produção Real:
-Para um ambiente empresarial, considere integrar com:
-- **Firebase** (gratuito até certo limite)
-- **MongoDB Atlas** (banco na nuvem)
-- **Servidor próprio** com PHP/MySQL
-
-## 📊 Exemplo de Uso
-
-### Registro de Produção:
-```
-Data: 14/08/2025
-Projetista: Eduarda Militz
-Praças: Praça Elias Abdo Bittar
-Tipo de projeto: Finalizado Luminotécnico, preenchido planilhão e feito croqui
-Pontos:
-- Retrofit 1: 4
-- Retrofit 2: 20
-- Retrofit 3: 0
-- Retrofit 4: 0
-- Remodelamento V: 0
-- Remodelamento D: 14
-Total: 38 pontos
-```
-
-## 🎨 Recursos Visuais
-
-- **Design moderno** com gradientes
-- **Responsivo** para mobile e desktop
-- **Gráficos interativos** com Chart.js
-- **Animações suaves**
-- **Interface intuitiva**
-
-## 🔧 Funcionalidades Administrativas
-
-### Exportação Excel
-- **Dados completos** de todas as produções
-- **Resumos por equipe** e projetista
-- **Planilhas separadas** (dados + resumo)
-- **Nome automático** com data
-
-### Gerenciamento de Usuários
-- **Adicionar novos usuários**
-- **Promover/rebaixar** administradores
-- **Excluir usuários** e suas produções
-- **Visualizar estatísticas** por usuário
-
-### Backup/Restauração
-- **Backup completo** em arquivo JSON
-- **Restauração** de dados anteriores
-- **Controle de versão** dos backups
-
-## 📱 Responsividade
-
-O sistema é totalmente responsivo:
-- **Desktop**: Layout completo com gráficos lado a lado
-- **Tablet**: Gráficos em coluna única
-- **Mobile**: Interface otimizada para toque
-
-## 🐛 Solução de Problemas
-
-### Dados não salvam:
-- Verifique se o JavaScript está habilitado
-- Não use modo privado/anônimo do navegador
-
-### Gráficos não aparecem:
-- Verifique sua conexão com internet (Chart.js via CDN)
-- Aguarde alguns segundos após o login
-
-### Exportação Excel não funciona:
-- Verifique se popups estão habilitados
-- Tente em outro navegador
-
-## 🔄 Atualizações Futuras
-
-Possíveis melhorias:
-- [ ] Notificações por email
-- [ ] Relatórios automáticos
-- [ ] Integração com Google Sheets
-- [ ] App mobile nativo
-- [ ] Metas e objetivos por equipe
-
-## 📞 Suporte
-
-Para dúvidas ou problemas:
-1. Verifique se seguiu todos os passos
-2. Teste os usuários padrão
-3. Consulte o console do navegador (F12)
-
-## 📄 Licença
-
-Este sistema foi desenvolvido para uso interno da equipe de projetos.
+### 🛡️ Painel Administrativo (Apenas Admin)
+- **Gestão de Utilizadores**: Criar, remover e alterar permissões (promover/rebaixar admins).
+- **Exportação de Dados**: Download de relatórios completos em **Excel (.xlsx)**.
+- **Alerta de Duplicatas**: Sistema inteligente que deteta e lista projetos registados em duplicado por utilizadores diferentes na mesma praça.
+- **Sincronização**: Atualização forçada de dados em tempo real.
 
 ---
 
-**🚀 Sistema pronto para uso no GitHub Pages!**
+## 🛠️ Tecnologias Utilizadas
+
+- **Frontend**: HTML5, CSS3 (Responsivo), JavaScript (ES6+).
+- **Backend / Database**: Google Firebase (Firestore Database & Authentication).
+- **Bibliotecas**:
+  - [Chart.js](https://www.chartjs.org/) - Para geração de gráficos interativos.
+  - [SheetJS (xlsx)](https://sheetjs.com/) - Para exportação de relatórios Excel.
+  - [Lucide Icons](https://lucide.dev/) - Ícones da interface.
+
+---
+
+## 📂 Estrutura do Projeto
+
+```bash
+/
+├── index.html                # Dashboard Principal (Login e Produção Diária)
+├── projetos-viarios.html     # Módulo de Projetos Viários
+├── styles.css                # Estilos globais e responsivos
+├── script-firebase.js        # Lógica principal (Auth, CRUD Produção, Admin)
+├── projetos-viarios.js       # Lógica específica do módulo Viários
+├── firebase-config.js        # Configuração das chaves do Firebase
+└── projeto-manager.js        # Regras de negócio (Cálculo de progresso/finalização)

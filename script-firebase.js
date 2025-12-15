@@ -1811,3 +1811,26 @@ Chart.defaults.plugins.legend.display = true;
 Chart.defaults.plugins.legend.position = 'bottom';
 Chart.defaults.elements.arc.borderWidth = 2;
 Chart.defaults.elements.arc.borderColor = '#ffffff';
+
+window.loginUser = loginUser;
+window.logoutUser = logoutUser;
+window.fillDemoUser = fillDemoUser;
+window.calculateTotal = calculateTotal;
+
+// Funções Administrativas
+window.showUserManagement = showUserManagement;
+window.hideUserManagement = hideUserManagement;
+window.addUser = addUser;
+window.toggleUserRole = toggleUserRole;
+window.deleteUser = deleteUser;
+window.exportToExcel = exportToExcel;
+window.syncData = syncData;
+
+// Funções de Edição
+window.editProduction = editProduction;
+window.updateProduction = updateProduction;
+window.deleteProduction = deleteProduction;
+window.hideEditModal = hideEditModal;
+window.calculateEditTotal = calculateEditTotal;
+
+console.log('✅ Todas as funções foram vinculadas ao botão com sucesso!');

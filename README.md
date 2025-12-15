@@ -65,3 +65,15 @@ Sistema web desenvolvido para gestão e monitorização da produtividade das equ
 ├── projetos-viarios.js       # Lógica específica do módulo Viários
 ├── firebase-config.js        # Configuração das chaves do Firebase
 └── projeto-manager.js        # Regras de negócio (Cálculo de progresso/finalização)
+
+## 📝 Notas de Versão
+
+- v2.1: Adicionado campo "É Revisão de Praça" nos formulários e relatórios.
+
+- v2.0: Implementação do Módulo de Projetos Viários.
+
+- v1.5: Adicionado sistema de deteção de duplicatas e correção de gráficos.
+
+- v1.0: Lançamento inicial com registo de produção diária.
+
+Desenvolvido para otimizar o fluxo de trabalho das equipas de engenharia.

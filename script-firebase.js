@@ -1067,10 +1067,11 @@ function showFinishedProjectsDetails(user, projects) {
     detailsDiv.classList.remove('hidden');
 }
 
+
 function checkForDuplicateProjects() {
     const warningContainer = document.getElementById('duplicateProjectsWarning');
     const listDiv = document.getElementById('duplicateProjectsList');
-    const countBadge = document.getElementById('dupCountBadge'); // Novo elemento
+    const countBadge = document.getElementById('dupCountBadge');
 
     if (!warningContainer || !listDiv) return;
 
@@ -1078,12 +1079,18 @@ function checkForDuplicateProjects() {
 
     // Agrupa produções
     allProductions.forEach(p => {
-        if (p.plaza) {
+        // LÓGICA ALTERADA AQUI:
+        // Verifica se tem praça E se NÃO é uma revisão (!p.isRevision)
+        // Se for revisão, ignoramos na contagem de duplicidade
+        if (p.plaza && !p.isRevision) {
             const plazaName = p.plaza.trim().toLowerCase();
+            
             if (!productionsByPlaza[plazaName]) {
                 productionsByPlaza[plazaName] = {};
             }
+            
             const userName = p.userName || p.userEmail;
+            
             if (!productionsByPlaza[plazaName][userName]) {
                 productionsByPlaza[plazaName][userName] = [];
             }
@@ -1092,14 +1099,19 @@ function checkForDuplicateProjects() {
     });
 
     let duplicatesHtml = '';
-    let duplicateCount = 0; // Contador de casos
+    let duplicateCount = 0;
 
     for (const plaza in productionsByPlaza) {
         const users = Object.keys(productionsByPlaza[plaza]);
+        
+        // Se houver mais de um usuário trabalhando na mesma praça (que não seja revisão)
         if (users.length > 1) {
             duplicateCount++;
-            // Recupera o nome original da praça do primeiro registro encontrado
-            const originalPlazaName = allProductions.find(p => p.plaza.trim().toLowerCase() === plaza).plaza;
+            
+            // Recupera o nome original da praça do primeiro registro encontrado para exibição correta
+            // (Usamos Object.values para pegar o array de produções do primeiro usuário e pegamos o primeiro item)
+            const firstUser = users[0];
+            const originalPlazaName = productionsByPlaza[plaza][firstUser][0].plaza;
             
             duplicatesHtml += `
                 <div class="duplicate-item" style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1);">
@@ -1117,13 +1129,17 @@ function checkForDuplicateProjects() {
         
         warningContainer.classList.remove('hidden'); // Mostra a caixa vermelha
         
-        // Garante que a lista comece fechada (recolhida)
-        listDiv.classList.add('hidden'); 
-        const arrow = document.getElementById('dupArrow');
-        if(arrow) arrow.style.transform = 'rotate(0deg)';
+        // Garante que a lista comece fechada (recolhida) apenas se não tiver sido aberta manualmente antes
+        // Ou reseta o estado se preferir
+        if (listDiv.innerHTML !== duplicatesHtml) { 
+             listDiv.classList.add('hidden');
+             const arrow = document.getElementById('dupArrow');
+             if(arrow) arrow.style.transform = 'rotate(0deg)';
+        }
         
     } else {
         listDiv.innerHTML = '';
+        if (countBadge) countBadge.textContent = '0';
         warningContainer.classList.add('hidden');
     }
 }

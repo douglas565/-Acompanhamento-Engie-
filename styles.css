@@ -869,3 +869,68 @@ body {
     font-weight: 500;
     text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
+
+
+/* --- ESTILOS DO MASCOTE INTERATIVO --- */
+.mascot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px; /* Canto inferior direito */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.mascot-container:hover {
+    transform: scale(1.1);
+}
+
+.mascot-speech-bubble {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 15px;
+    border-bottom-right-radius: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #333;
+    max-width: 200px;
+    text-align: center;
+    position: relative;
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border: 2px solid #667eea;
+}
+
+.mascot-avatar {
+    font-size: 60px;
+    filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+    animation: float 3s ease-in-out infinite;
+    user-select: none;
+}
+
+/* Animações de estado */
+.mascot-sad { filter: grayscale(0.8) drop-shadow(0 5px 5px rgba(0,0,0,0.2)); animation: none; }
+.mascot-dead { filter: grayscale(1) opacity(0.7); transform: rotate(90deg); margin-bottom: -15px; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Responsivo: esconde em celulares muito pequenos se atrapalhar */
+@media (max-width: 480px) {
+    .mascot-container {
+        transform: scale(0.7);
+        right: 10px;
+        bottom: 10px;
+    }
+}

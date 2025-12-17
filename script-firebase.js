@@ -94,6 +94,10 @@ function showMainScreen() {
     setTimeout(() => {
         updateDashboard();
         loadUserHistory();
+        
+        // ADICIONE ESTA LINHA AQUI:
+        if (typeof initMascot === 'function') initMascot(); 
+        
     }, 200);
 }
 

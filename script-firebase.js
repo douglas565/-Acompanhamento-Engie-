@@ -143,21 +143,20 @@ async function loginUser() {
 
 async function handleUserLogin(user) {
     currentUser = user;
-    
-    // Carregar dados do usuário
     await loadUserData(user.uid);
     
-    // Verifica se os elementos existem antes de tentar alterá-los
+    // VERIFICAÇÃO DE BLOQUEIO
+    if (currentUserData && currentUserData.blocked === true) {
+        await auth.signOut();
+        showError('🚫 Seu acesso foi removido pelo administrador.');
+        showLoginScreen();
+        return;
+    }
+    
     const currentUserEl = document.getElementById('currentUser');
     const userRoleEl = document.getElementById('userRole');
-    
-    if (currentUserEl) {
-        currentUserEl.textContent = currentUserData.name || currentUserData.email;
-    }
-    
-    if (userRoleEl) {
-        userRoleEl.textContent = `(${currentUserData.team} - ${currentUserData.role === 'admin' ? 'Administrador' : 'Usuário'})`;
-    }
+    if (currentUserEl) currentUserEl.textContent = currentUserData.name || currentUserData.email;
+    if (userRoleEl) userRoleEl.textContent = `(${currentUserData.team} - ${currentUserData.role === 'admin' ? 'Administrador' : 'Usuário'})`;
     
     showMainScreen();
 }
@@ -1569,22 +1568,25 @@ function loadUserList() {
             const userProductions = allProductions.filter(p => p.userId === user.id);
             const totalPoints = userProductions.reduce((sum, p) => sum + p.total, 0);
             
+            // Localize dentro de loadUserList() no script-firebase.js
             return `
-                <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; ${user.blocked ? 'opacity: 0.6; border-left: 5px solid red;' : ''}">
                     <div>
                         <strong>${user.name || user.email}</strong> - ${user.team} 
                         ${user.role === 'admin' ? '(Admin)' : '(Usuário)'}
+                        ${user.blocked ? '<b style="color:red;"> [ACESSO REMOVIDO]</b>' : ''}
                         <br><small style="color: #666;">
-                            Email: ${user.email} | Produções: ${userProductions.length} | Pontos: ${totalPoints}
+                            Email: ${user.email} | Pontos: ${totalPoints}
                         </small>
                     </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         ${user.id !== currentUser.uid ? `
+                            <button class="btn" style="padding: 5px 10px; font-size: 12px; background: ${user.blocked ? '#4CAF50' : '#f44336'};" 
+                                onclick="toggleUserAccess('${user.id}', ${user.blocked || false})">
+                                ${user.blocked ? '🔓 Restaurar Acesso' : '🚫 Remover Acesso'}
+                            </button>
                             <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="toggleUserRole('${user.id}')">
                                 ${user.role === 'admin' ? '⬇️ Rebaixar' : '⬆️ Promover'}
-                            </button>
-                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="deleteUser('${user.id}')">
-                                🗑️ Deletar
                             </button>
                         ` : '<small style="color: #666;">Você</small>'}
                     </div>
@@ -1812,6 +1814,30 @@ function toggleDuplicateList() {
     }
 }
 
+async function toggleUserAccess(userId, isCurrentlyBlocked) {
+    if (currentUserData.role !== 'admin') return;
+    
+    const acao = isCurrentlyBlocked ? 'restaurar' : 'remover';
+    if (!confirm(`Tem certeza que deseja ${acao} o acesso deste usuário?`)) return;
+
+    try {
+        await db.collection(COLLECTIONS.USERS).doc(userId).update({
+            blocked: !isCurrentlyBlocked,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await loadAllData();
+        loadUserList();
+        showSuccess(`✅ Acesso ${isCurrentlyBlocked ? 'restaurado' : 'removido'} com sucesso!`);
+    } catch (error) {
+        console.error('Erro ao alterar acesso:', error);
+        showError('Erro ao alterar status de acesso');
+    }
+}
+
+// Não esqueça de registrar no window para o botão funcionar
+window.toggleUserAccess = toggleUserAccess;
+
 // ============================================================
 // 1. CONECTAR FUNÇÕES AO WINDOW (CRUCIAL PARA OS BOTÕES)
 // ============================================================
@@ -1865,3 +1891,5 @@ if (typeof Chart !== 'undefined') {
 } else {
     console.warn('⚠️ Chart.js não carregou. Gráficos indisponíveis, mas o sistema segue funcional.');
 }
+
+

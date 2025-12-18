@@ -15,7 +15,7 @@
         semanalGeral: null,
         semanalIndividual: null,
         projetista: null,
-        fases: null // Alterado de revisoes para fases
+        fases: null
     };
     
     let editingId = null;
@@ -46,7 +46,7 @@
     }
 
     async function inicializarApp() {
-        console.log("Inicializando App Viários (Modo Fases)...");
+        console.log("Inicializando App Viários (Modo Comparativo)...");
         db = firebase.firestore();
         
         const userNameEl = document.getElementById('userName');
@@ -78,7 +78,11 @@
                 el.style.flexDirection = 'column';
             }
         });
-
+        
+        // Mostrar alerta de pendências para admin
+        const alertPendencias = document.getElementById('alertPendencias');
+        // A visibilidade real depende se há dados, controlado na função verificarPendencias
+        
         const tabelaTitulo = document.getElementById('tabelaTitulo');
         if(tabelaTitulo) tabelaTitulo.textContent = 'Todos os Registros de Projetos Viários';
         
@@ -128,7 +132,7 @@
                 nomeVia: document.getElementById('nomeVia').value,
                 data: document.getElementById('data').value,
                 quantidadePontos: parseInt(document.getElementById('quantidadePontos').value),
-                fase: document.getElementById('fase').value, // Nova lógica de fase
+                fase: document.getElementById('fase').value,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
             
@@ -160,10 +164,9 @@
             
             snapshot.forEach(doc => {
                 let item = doc.data();
-                // Compatibilidade com dados antigos que usavam 'revisao' booleano
                 if (!item.fase) {
-                    if (item.revisao === true) item.fase = 'Levantamento (Legado)';
-                    else if (item.revisao === false) item.fase = 'Projeto (Legado)';
+                    if (item.revisao === true) item.fase = 'Levantamento';
+                    else if (item.revisao === false) item.fase = 'Projeto';
                     else item.fase = 'N/A';
                 }
                 dados.push({ id: doc.id, ...item });
@@ -172,10 +175,71 @@
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
             atualizarTabela(dados);
+            
+            // Nova função para verificar pendências (apenas Admin ou visualização geral)
+            if(isAdmin) {
+                verificarPendencias(dados);
+            }
+            
             await atualizarGraficos(dados);
             
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
+        }
+    }
+
+    // NOVA FUNÇÃO: Verifica se há vias com Levantamento > Projeto
+    function verificarPendencias(dados) {
+        const vias = {};
+
+        // Agrupar dados por via (normalizando o nome)
+        dados.forEach(item => {
+            const nomeNormalizado = item.nomeVia.trim().toUpperCase();
+            
+            if (!vias[nomeNormalizado]) {
+                vias[nomeNormalizado] = { 
+                    nomeReal: item.nomeVia.trim(), // Guarda o nome bonito para exibir
+                    levantado: 0, 
+                    projetado: 0 
+                };
+            }
+
+            const fase = item.fase || '';
+            const pontos = parseInt(item.quantidadePontos) || 0;
+
+            if (fase.includes('Levantamento')) {
+                vias[nomeNormalizado].levantado += pontos;
+            } else if (fase.includes('Projeto')) {
+                vias[nomeNormalizado].projetado += pontos;
+            }
+        });
+
+        // Filtrar vias com pendências (Levantado > Projetado)
+        const pendencias = Object.values(vias).filter(via => via.levantado > via.projetado);
+        
+        const alertContainer = document.getElementById('alertPendencias');
+        const tbody = document.querySelector('#tabelaPendencias tbody');
+        
+        if (!alertContainer || !tbody) return;
+
+        if (pendencias.length > 0) {
+            alertContainer.style.display = 'block'; // Mostra o card
+            tbody.innerHTML = '';
+
+            pendencias.forEach(via => {
+                const diferenca = via.levantado - via.projetado;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${via.nomeReal}</strong></td>
+                    <td>${via.levantado} pts</td>
+                    <td>${via.projetado} pts</td>
+                    <td style="color: #e65100; font-weight: bold;">-${diferenca} pts</td>
+                    <td><span class="badge-pendente">Aguardando Projeto</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            alertContainer.style.display = 'none'; // Esconde se estiver tudo ok
         }
     }
 
@@ -201,7 +265,6 @@
                 }
             }
 
-            // Badge colorido para a fase
             const faseClass = item.fase.includes('Levantamento') ? '#ff9800' : '#2196F3';
             const faseBadge = `<span style="background-color: ${faseClass}20; color: ${faseClass}; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">${item.fase}</span>`;
             
@@ -273,7 +336,7 @@
         if (isAdmin) {
             atualizarGraficoSemanalGeral(dados);
             atualizarGraficoProjetista(dados);
-            atualizarGraficoFases(dados); // Novo gráfico
+            atualizarGraficoFases(dados);
         }
     }
 
@@ -437,56 +500,64 @@
         });
     }
 
-    // Gráfico de Fases (Levantamento vs Projeto)
+    // Gráfico de Fases - COMPARATIVO LADO A LADO
     function atualizarGraficoFases(dados) {
         const canvas = document.getElementById('chartFases');
         if (!canvas) return;
         
         let totalLevantamento = 0;
         let totalProjeto = 0;
-        let totalOutros = 0;
         
         dados.forEach(item => {
             const f = item.fase || '';
-            if (f === 'Levantamento' || f.includes('Levantamento')) {
-                totalLevantamento++;
-            } else if (f === 'Projeto' || f.includes('Projeto')) {
-                totalProjeto++;
-            } else {
-                totalOutros++;
+            const pts = parseInt(item.quantidadePontos) || 0;
+            if (f.includes('Levantamento')) {
+                totalLevantamento += pts;
+            } else if (f.includes('Projeto')) {
+                totalProjeto += pts;
             }
         });
-        
-        const total = totalLevantamento + totalProjeto + totalOutros;
         
         if (chartInstances.fases) {
             chartInstances.fases.destroy();
         }
         
+        // Mudei para Bar Chart para facilitar a comparação visual de quantidades
         chartInstances.fases = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
+            type: 'bar',
             data: {
-                labels: ['Levantamento', 'Projeto', 'Outros'],
-                datasets: [{
-                    data: [totalLevantamento, totalProjeto, totalOutros],
-                    backgroundColor: ['#FF9800', '#2196F3', '#9E9E9E'],
-                    borderWidth: 1
-                }]
+                labels: ['Total Global'],
+                datasets: [
+                    {
+                        label: 'Total Levantado',
+                        data: [totalLevantamento],
+                        backgroundColor: '#FF9800', // Laranja
+                        borderColor: '#F57C00',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Total Projetado',
+                        data: [totalProjeto],
+                        backgroundColor: '#2196F3', // Azul
+                        borderColor: '#1976D2',
+                        borderWidth: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                },
                 plugins: {
                     legend: { position: 'bottom' },
-                    title: { display: true, text: 'Distribuição: Levantamento vs Projeto' },
+                    title: { display: true, text: 'Pontos Levantados vs Pontos Projetados' },
                     datalabels: {
-                        color: '#fff',
-                        font: { weight: 'bold' },
-                        formatter: (value, ctx) => {
-                            if (value === 0) return '';
-                            const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            return ((value * 100) / sum).toFixed(1) + "%";
-                        }
+                        color: '#333',
+                        anchor: 'end',
+                        align: 'top',
+                        font: { weight: 'bold' }
                     }
                 }
             },
@@ -503,7 +574,7 @@
                 document.getElementById('editNomeVia').value = data.nomeVia;
                 document.getElementById('editData').value = data.data;
                 document.getElementById('editQuantidadePontos').value = data.quantidadePontos;
-                // Preencher select de fase, ou tratar legado
+                
                 let faseValor = data.fase;
                 if (!faseValor) {
                     if (data.revisao === true) faseValor = 'Levantamento';
@@ -534,7 +605,7 @@
                     nomeVia: document.getElementById('editNomeVia').value,
                     data: document.getElementById('editData').value,
                     quantidadePontos: parseInt(document.getElementById('editQuantidadePontos').value),
-                    fase: document.getElementById('editFase').value // Atualiza com a fase
+                    fase: document.getElementById('editFase').value
                 };
                 
                 try {
@@ -580,7 +651,7 @@
                 'Nome da Via': item.nomeVia,
                 'Data': new Date(item.data).toLocaleDateString('pt-BR'),
                 'Quantidade de Pontos': item.quantidadePontos,
-                'Fase': item.fase || 'N/A' // Coluna alterada de Revisão para Fase
+                'Fase': item.fase || 'N/A'
             }));
             
             const wb = XLSX.utils.book_new();

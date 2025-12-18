@@ -41,6 +41,11 @@
         .delete-btn { background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         .delete-btn:hover { background: #da190b; }
         .loading { text-align: center; padding: 50px; font-size: 18px; color: #666; }
+        
+        /* Estilos para o Card de Pendências */
+        .pendencias-card { border-left: 5px solid #ff9800; background: #fff8e1; }
+        .pendencia-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .badge-pendente { background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -89,6 +94,23 @@
             </form>
         </div>
         
+        <div id="alertPendencias" class="table-section pendencias-card hidden" style="margin-bottom: 30px; display: none;">
+            <h3 style="color: #e65100;">⚠️ Vias Aguardando Projeto (Pendências)</h3>
+            <p style="margin-bottom: 15px; color: #666;">As vias abaixo possuem levantamento realizado, mas a quantidade de pontos projetados ainda é inferior.</p>
+            <table id="tabelaPendencias">
+                <thead>
+                    <tr style="background: #ffe0b2;">
+                        <th>Nome da Via</th>
+                        <th>Pontos Levantados</th>
+                        <th>Pontos Projetados</th>
+                        <th>Saldo Pendente</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
         <div class="charts-section">
             <div id="graficoGeralContainer" class="chart-container admin-only">
                 <h3>📊 Produção Geral por Semana (Todos os Projetistas)</h3>
@@ -106,13 +128,13 @@
             </div>
             
             <div id="graficoFasesContainer" class="chart-container admin-only">
-                <h3>🔄 Distribuição: Levantamento vs Projeto</h3>
+                <h3>⚖️ Comparativo Global: Levantado vs Projetado</h3>
                 <canvas id="chartFases"></canvas>
             </div>
         </div>
         
         <div class="table-section">
-            <h3 id="tabelaTitulo">Meus Registros de Projetos Viários</h3>
+            <h3 id="tabelaTitulo">Histórico Completo de Registros</h3>
             <table id="tabelaViarios">
                 <thead>
                     <tr id="tableHeader">

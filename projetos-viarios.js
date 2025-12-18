@@ -2,29 +2,24 @@
 (function() {
     'use strict';
     
-    // Prevenir inicialização dupla
     if (window.viariosApp) {
         return;
     }
     window.viariosApp = true;
 
-    // Variáveis do módulo
     let currentUser = null;
     let isAdmin = false;
     let db = null;
     
-    // Armazenar instâncias dos gráficos para destruir corretamente e evitar bugs visuais
     const chartInstances = {
         semanalGeral: null,
         semanalIndividual: null,
         projetista: null,
-        revisoes: null,
-        finishedProjects: null
+        fases: null // Alterado de revisoes para fases
     };
     
     let editingId = null;
 
-    // Inicialização com Firebase Auth
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
             currentUser = user;
@@ -38,25 +33,20 @@
         }
     });
     
-    // Sobrescrever a função updateDashboard do script-firebase.js com segurança
     if (typeof window.updateDashboard === 'function') {
         const originalUpdateDashboard = window.updateDashboard;
         window.updateDashboard = function() {
-            // Executa a original apenas se estivermos na dashboard principal para evitar erros
             if (document.getElementById('mainScreen')) {
                 originalUpdateDashboard();
             }
-            
-            // Garante que os elementos de admin sejam mostrados nesta página
             if (isAdmin) {
                 mostrarElementosAdmin();
             }
         };
     }
 
-    // Inicializar aplicação
     async function inicializarApp() {
-        console.log("Inicializando App Viários...");
+        console.log("Inicializando App Viários (Modo Fases)...");
         db = firebase.firestore();
         
         const userNameEl = document.getElementById('userName');
@@ -73,17 +63,13 @@
         if(mainContent) mainContent.style.display = 'block';
     }
 
-    // Função auxiliar para mostrar elementos de admin
-// Função auxiliar para mostrar elementos de admin
     function mostrarElementosAdmin() {
-        // Lista APENAS com os gráficos que queres manter
         const idsAdmin = [
             'graficoGeralContainer', 
             'graficoProjetistaContainer', 
-            'graficoRevisoesContainer'
+            'graficoFasesContainer'
         ];
         
-        // Remove a classe admin-only e garante display flex
         idsAdmin.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -93,16 +79,6 @@
             }
         });
 
-        // ESCONDER explicitamente o gráfico individual do próprio admin, se desejado
-        // (Opcional: se o admin quiser ver a sua própria produção, remova estas linhas)
-        /*
-        const chartIndividual = document.getElementById('chartSemanalIndividual');
-        if (chartIndividual) {
-             const container = chartIndividual.closest('.chart-container');
-             if(container) container.style.display = 'none';
-        }
-        */
-        
         const tabelaTitulo = document.getElementById('tabelaTitulo');
         if(tabelaTitulo) tabelaTitulo.textContent = 'Todos os Registros de Projetos Viários';
         
@@ -117,12 +93,10 @@
 
     async function verificarAdmin() {
         try {
-            // Verifica na coleção 'users' se o role é admin
             const userDoc = await db.collection('users').doc(currentUser.uid).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
                 isAdmin = userData.role === 'admin';
-                
                 if (isAdmin) {
                     mostrarElementosAdmin();
                 }
@@ -154,7 +128,7 @@
                 nomeVia: document.getElementById('nomeVia').value,
                 data: document.getElementById('data').value,
                 quantidadePontos: parseInt(document.getElementById('quantidadePontos').value),
-                revisao: document.getElementById('revisao').checked,
+                fase: document.getElementById('fase').value, // Nova lógica de fase
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
             
@@ -177,20 +151,24 @@
             let snapshot;
             
             if (isAdmin) {
-                // Admin carrega TODOS os dados
                 snapshot = await db.collection('projetosViarios').get();
             } else {
-                // Usuário carrega APENAS os seus
                 snapshot = await db.collection('projetosViarios')
                     .where('userId', '==', currentUser.uid)
                     .get();
             }
             
             snapshot.forEach(doc => {
-                dados.push({ id: doc.id, ...doc.data() });
+                let item = doc.data();
+                // Compatibilidade com dados antigos que usavam 'revisao' booleano
+                if (!item.fase) {
+                    if (item.revisao === true) item.fase = 'Levantamento (Legado)';
+                    else if (item.revisao === false) item.fase = 'Projeto (Legado)';
+                    else item.fase = 'N/A';
+                }
+                dados.push({ id: doc.id, ...item });
             });
             
-            // Ordenar por data (mais recente primeiro)
             dados.sort((a, b) => new Date(b.data) - new Date(a.data));
             
             atualizarTabela(dados);
@@ -215,7 +193,6 @@
                 rowHTML += `<td>${item.userEmail || 'N/A'}</td>`;
             }
             
-            // Formatar data evitando problemas de fuso horário
             let dataFormatada = item.data;
             if (item.data && item.data.includes('-')) {
                 const parts = item.data.split('-');
@@ -223,12 +200,16 @@
                     dataFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
                 }
             }
+
+            // Badge colorido para a fase
+            const faseClass = item.fase.includes('Levantamento') ? '#ff9800' : '#2196F3';
+            const faseBadge = `<span style="background-color: ${faseClass}20; color: ${faseClass}; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">${item.fase}</span>`;
             
             rowHTML += `
                 <td>${item.nomeVia}</td>
                 <td>${dataFormatada}</td>
                 <td>${item.quantidadePontos}</td>
-                <td>${item.revisao ? 'Sim' : 'Não'}</td>
+                <td>${faseBadge}</td>
                 <td>
                     <button class="btn btn-edit" style="margin-right: 5px; padding: 5px 10px; font-size: 12px;" onclick="window.abrirModalEdicao('${item.id}')">Editar</button>
                     <button class="delete-btn" onclick="window.excluirRegistro('${item.id}')">Excluir</button>
@@ -240,7 +221,6 @@
         });
     }
 
-    // Tornar função global para o onclick do HTML
     window.excluirRegistro = async function(id) {
         if (confirm('Tem certeza que deseja excluir este registro?')) {
             try {
@@ -256,7 +236,6 @@
     function getWeekNumber(date) {
         if(!date) return 'Semana N/A';
         const d = new Date(date);
-        // Ajuste de timezone
         const userTimezoneOffset = d.getTimezoneOffset() * 60000;
         const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
         
@@ -277,7 +256,6 @@
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
-    // Função de segurança para carregar plugins apenas se existirem
     function getPlugins() {
         const plugins = [];
         if (typeof ChartDataLabels !== 'undefined') {
@@ -289,27 +267,21 @@
     async function atualizarGraficos(dados) {
         if (typeof Chart === 'undefined') return;
 
-        // Gráfico individual (sempre visível para o utilizador, opcional para admin)
-        // Se quiser esconder do admin, envolva num `if (!isAdmin)`
         const dadosIndividuais = dados.filter(item => item.userId === currentUser.uid);
         atualizarGraficoSemanalIndividual(dadosIndividuais);
         
-        // Gráficos gerais (apenas admin)
         if (isAdmin) {
             atualizarGraficoSemanalGeral(dados);
             atualizarGraficoProjetista(dados);
-            atualizarGraficoRevisoes(dados);
-            
-            // REMOVIDO: Chamadas para gráficos de praças que não existem mais aqui
+            atualizarGraficoFases(dados); // Novo gráfico
         }
     }
-    // 1. Gráfico Semanal Individual
+
     function atualizarGraficoSemanalIndividual(dados) {
         const canvas = document.getElementById('chartSemanalIndividual');
         if (!canvas) return;
         
         const dadosPorSemana = {};
-        
         dados.forEach(item => {
             const semana = getWeekNumber(item.data);
             dadosPorSemana[semana] = (dadosPorSemana[semana] || 0) + item.quantidadePontos;
@@ -318,7 +290,6 @@
         const semanas = Object.keys(dadosPorSemana).sort();
         const valores = semanas.map(sem => dadosPorSemana[sem]);
         
-        // Destruir gráfico anterior para evitar sobreposição/memória
         if (chartInstances.semanalIndividual) {
             chartInstances.semanalIndividual.destroy();
         }
@@ -337,7 +308,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Importante para não crescer infinitamente
+                maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true } },
                 plugins: {
                     datalabels: {
@@ -352,7 +323,6 @@
         });
     }
 
-    // 2. Gráfico Geral Semanal (Barras Empilhadas por Usuário) - Admin
     function atualizarGraficoSemanalGeral(dados) {
         const canvas = document.getElementById('chartSemanalGeral');
         if (!canvas) return;
@@ -421,7 +391,6 @@
         });
     }
 
-    // 3. Gráfico por Projetista (Admin)
     function atualizarGraficoProjetista(dados) {
         const canvas = document.getElementById('chartProjetista');
         if (!canvas) return;
@@ -468,37 +437,39 @@
         });
     }
 
-    // 4. Gráfico de Revisões (Percentual) - Admin
-    function atualizarGraficoRevisoes(dados) {
-        const canvas = document.getElementById('chartRevisoes');
+    // Gráfico de Fases (Levantamento vs Projeto)
+    function atualizarGraficoFases(dados) {
+        const canvas = document.getElementById('chartFases');
         if (!canvas) return;
         
-        let totalRevisoes = 0;
-        let totalNovos = 0;
+        let totalLevantamento = 0;
+        let totalProjeto = 0;
+        let totalOutros = 0;
         
         dados.forEach(item => {
-            if (item.revisao) totalRevisoes++;
-            else totalNovos++;
+            const f = item.fase || '';
+            if (f === 'Levantamento' || f.includes('Levantamento')) {
+                totalLevantamento++;
+            } else if (f === 'Projeto' || f.includes('Projeto')) {
+                totalProjeto++;
+            } else {
+                totalOutros++;
+            }
         });
         
-        const total = totalRevisoes + totalNovos;
-        const percentRevisoes = total > 0 ? ((totalRevisoes / total) * 100).toFixed(1) : 0;
-        const percentNovos = total > 0 ? ((totalNovos / total) * 100).toFixed(1) : 0;
+        const total = totalLevantamento + totalProjeto + totalOutros;
         
-        if (chartInstances.revisoes) {
-            chartInstances.revisoes.destroy();
+        if (chartInstances.fases) {
+            chartInstances.fases.destroy();
         }
         
-        chartInstances.revisoes = new Chart(canvas.getContext('2d'), {
+        chartInstances.fases = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: [
-                    `Revisões (${percentRevisoes}%)`,
-                    `Projetos Novos (${percentNovos}%)`
-                ],
+                labels: ['Levantamento', 'Projeto', 'Outros'],
                 datasets: [{
-                    data: [totalRevisoes, totalNovos],
-                    backgroundColor: ['#FF9F40', '#4BC0C0'],
+                    data: [totalLevantamento, totalProjeto, totalOutros],
+                    backgroundColor: ['#FF9800', '#2196F3', '#9E9E9E'],
                     borderWidth: 1
                 }]
             },
@@ -507,16 +478,14 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'bottom' },
-                    title: { display: true, text: 'Percentual de Revisões vs Novos' },
+                    title: { display: true, text: 'Distribuição: Levantamento vs Projeto' },
                     datalabels: {
                         color: '#fff',
                         font: { weight: 'bold' },
                         formatter: (value, ctx) => {
-                            let sum = 0;
-                            let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => { sum += data; });
-                            if (sum === 0) return "0%";
-                            return (value * 100 / sum).toFixed(1) + "%";
+                            if (value === 0) return '';
+                            const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            return ((value * 100) / sum).toFixed(1) + "%";
                         }
                     }
                 }
@@ -525,7 +494,6 @@
         });
     }
 
-    // Funções de Edição
     window.abrirModalEdicao = async function(id) {
         editingId = id;
         try {
@@ -535,7 +503,14 @@
                 document.getElementById('editNomeVia').value = data.nomeVia;
                 document.getElementById('editData').value = data.data;
                 document.getElementById('editQuantidadePontos').value = data.quantidadePontos;
-                document.getElementById('editRevisao').checked = data.revisao;
+                // Preencher select de fase, ou tratar legado
+                let faseValor = data.fase;
+                if (!faseValor) {
+                    if (data.revisao === true) faseValor = 'Levantamento';
+                    else faseValor = 'Projeto';
+                }
+                document.getElementById('editFase').value = faseValor;
+                
                 document.getElementById('editModal').style.display = 'flex';
             }
         } catch (error) {
@@ -559,7 +534,7 @@
                     nomeVia: document.getElementById('editNomeVia').value,
                     data: document.getElementById('editData').value,
                     quantidadePontos: parseInt(document.getElementById('editQuantidadePontos').value),
-                    revisao: document.getElementById('editRevisao').checked
+                    fase: document.getElementById('editFase').value // Atualiza com a fase
                 };
                 
                 try {
@@ -574,7 +549,6 @@
         }
     });
 
-    // Exportar Excel (Apenas Admin)
     window.exportarParaExcel = async function() {
         if (!isAdmin) {
             alert('Acesso negado: Apenas administradores podem baixar o relatório.');
@@ -585,7 +559,14 @@
             const snapshot = await db.collection('projetosViarios').get();
             let dados = [];
             
-            snapshot.forEach(doc => dados.push(doc.data()));
+            snapshot.forEach(doc => {
+                let d = doc.data();
+                if(!d.fase) {
+                     if(d.revisao === true) d.fase = 'Levantamento';
+                     else d.fase = 'Projeto';
+                }
+                dados.push(d);
+            });
             
             if (dados.length === 0) {
                 alert('Não há dados para exportar!');
@@ -599,7 +580,7 @@
                 'Nome da Via': item.nomeVia,
                 'Data': new Date(item.data).toLocaleDateString('pt-BR'),
                 'Quantidade de Pontos': item.quantidadePontos,
-                'Revisão': item.revisao ? 'Sim' : 'Não'
+                'Fase': item.fase || 'N/A' // Coluna alterada de Revisão para Fase
             }));
             
             const wb = XLSX.utils.book_new();
@@ -610,7 +591,7 @@
                 { wch: 30 }, 
                 { wch: 15 }, 
                 { wch: 10 }, 
-                { wch: 10 }
+                { wch: 15 }
             ];
             
             XLSX.utils.book_append_sheet(wb, ws, 'Relatório Geral Viários');
